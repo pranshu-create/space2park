@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
 
 export default function Home({ vehicleMode = 'car', setVehicleMode }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token, demoLogin } = useAuth();
 
   // Search & Filter State
   const [destination, setDestination] = useState('phoenix');
@@ -41,6 +42,7 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
   const [hostModalOpen, setHostModalOpen] = useState(false);
   const [hostFormSubmitted, setHostFormSubmitted] = useState(false);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
+  const [bookingError, setBookingError] = useState('');
 
   // Live Events from Backend
   const [events, setEvents] = useState([]);
@@ -67,6 +69,8 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
 
   // Open Reservation Modal
   const openReservationModal = (venue, rate, bay) => {
+    setBookingError('');
+    setBookingConfirmed(false);
     setReservationModal({
       isOpen: true,
       venue,
@@ -75,14 +79,63 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
     });
   };
 
-  // Confirm Booking from Modal
-  const handleConfirmBooking = () => {
+  // Confirm Booking from Modal (Creates real cryptographically signed booking pass)
+  const handleConfirmBooking = async () => {
     setBookingConfirmed(true);
-    setTimeout(() => {
-      setReservationModal(prev => ({ ...prev, isOpen: false }));
+    setBookingError('');
+    try {
+      let activeToken = token || localStorage.getItem('s2p_token');
+      if (!activeToken) {
+        await demoLogin('seeker');
+        activeToken = localStorage.getItem('s2p_token');
+      }
+
+      // Map venue to synthetic Indore space ID
+      const v = (reservationModal.venue || '').toLowerCase();
+      let spaceId = 'space_ind_holkar_1';
+      if (v.includes('brilliant') || v.includes('tech expo')) {
+        spaceId = 'space_ind_brilliant_1';
+      } else if (v.includes('chappan') || v.includes('56 dukan')) {
+        spaceId = 'space_ind_chappan_1';
+      } else if (v.includes('citadel') || v.includes('nexus')) {
+        spaceId = 'space_ind_holkar_1';
+      }
+
+      const bayMatch = reservationModal.bay?.match(/[A-Z]-\d+/)?.[0] || selectedSlot.slot || 'A-12';
+
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${activeToken}`
+        },
+        body: JSON.stringify({
+          spaceId,
+          slotCode: bayMatch,
+          vehicleNumber: user?.vehicleNumber || 'MP 09 WZ 4821',
+          vehicleType: vehicleMode || 'car',
+          hours: 2,
+          demoOutcome: 'success'
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to issue instant reservation pass');
+
+      confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      localStorage.setItem('s2p_last_booking', JSON.stringify(data.booking));
+
+      setTimeout(() => {
+        setReservationModal(prev => ({ ...prev, isOpen: false }));
+        setBookingConfirmed(false);
+        navigate('/my-bookings', { state: { newBooking: data.booking } });
+      }, 900);
+    } catch (err) {
+      console.error('Instant reservation error:', err);
+      setBookingError(err.message);
       setBookingConfirmed(false);
-      navigate('/explore?hub=' + (destination === 'phoenix' ? 'citadel' : destination));
-    }, 1200);
+      alert('Reservation Error: ' + err.message);
+    }
   };
 
   // Host Form Submit
@@ -240,7 +293,7 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
 
       {/* 2. FLOATING INTEGRATED SEARCH COMPONENT */}
       <section className="relative z-20 w-full px-margin-mobile md:px-margin -mt-8 max-w-7xl mx-auto" id="search-section">
-        <div className="w-full bg-surface-container-high/95 backdrop-blur-2xl rounded-2xl p-space-md md:p-space-lg shadow-[0_16px_40px_rgba(0,0,0,0.6)]">
+        <div className="w-full glass-panel-elevated rounded-3xl p-space-md md:p-space-lg shadow-[0_16px_40px_rgba(0,0,0,0.6)] border border-primary/30">
           {/* Vehicle Mode Segmented Switch */}
           <div className="flex flex-wrap items-center justify-between gap-space-sm mb-space-md pb-space-sm bg-surface-container-lowest/40 p-1.5 rounded-xl">
             <div className="inline-flex p-1 rounded-lg bg-surface-container-low gap-1" id="vehicle-type-tabs">
@@ -415,9 +468,9 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
         {/* 4 Architectural Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
           {/* Card 1 */}
-          <div className="p-space-lg rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col justify-between group shadow-sm">
+          <div className="p-space-lg rounded-3xl glass-panel hover:glass-panel-elevated transition-all flex flex-col justify-between group shadow-sm border border-white/[0.08]">
             <div className="space-y-space-md">
-              <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary transition-all">
+              <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary transition-all border border-white/[0.06]">
                 <span className="material-symbols-outlined text-[26px]">sensors</span>
               </div>
               <span className="font-headline-sm text-headline-sm font-semibold text-on-surface block">Live Telemetry</span>
@@ -432,9 +485,9 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
           </div>
 
           {/* Card 2 */}
-          <div className="p-space-lg rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col justify-between group shadow-sm">
+          <div className="p-space-lg rounded-3xl glass-panel hover:glass-panel-elevated transition-all flex flex-col justify-between group shadow-sm border border-white/[0.08]">
             <div className="space-y-space-md">
-              <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary transition-all">
+              <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary transition-all border border-white/[0.06]">
                 <span className="material-symbols-outlined text-[26px]">commute</span>
               </div>
               <span className="font-headline-sm text-headline-sm font-semibold text-on-surface block">Car + Bike Dual Deck</span>
@@ -449,9 +502,9 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
           </div>
 
           {/* Card 3 */}
-          <div className="p-space-lg rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col justify-between group shadow-sm">
+          <div className="p-space-lg rounded-3xl glass-panel hover:glass-panel-elevated transition-all flex flex-col justify-between group shadow-sm border border-white/[0.08]">
             <div className="space-y-space-md">
-              <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary transition-all">
+              <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary transition-all border border-white/[0.06]">
                 <span className="material-symbols-outlined text-[26px]">stadium</span>
               </div>
               <span className="font-headline-sm text-headline-sm font-semibold text-on-surface block">Event Lock Pass</span>
@@ -466,9 +519,9 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
           </div>
 
           {/* Card 4 */}
-          <div className="p-space-lg rounded-2xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col justify-between group shadow-sm">
+          <div className="p-space-lg rounded-3xl glass-panel hover:glass-panel-elevated transition-all flex flex-col justify-between group shadow-sm border border-white/[0.08]">
             <div className="space-y-space-md">
-              <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary transition-all">
+              <div className="w-12 h-12 rounded-xl bg-surface-container-high flex items-center justify-center text-primary group-hover:bg-primary-container group-hover:text-on-primary transition-all border border-white/[0.06]">
                 <span className="material-symbols-outlined text-[26px]">verified</span>
               </div>
               <span className="font-headline-sm text-headline-sm font-semibold text-on-surface block">Rigorous Audit</span>
@@ -640,30 +693,37 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
           <div className="lg:col-span-6 flex flex-col gap-space-sm">
             {/* Hub Card 1: Phoenix Citadel */}
             <div
-              className={`hub-card p-space-md rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-md shadow-sm cursor-pointer ${
+              className={`hub-card p-space-md rounded-2xl glass-panel transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-md shadow-sm cursor-pointer border ${
                 selectedHub === 'phoenix'
-                  ? 'ring-2 ring-primary bg-surface-container'
-                  : 'bg-surface-container-low hover:bg-surface-container'
+                  ? 'border-primary ring-2 ring-primary/40 glass-panel-elevated'
+                  : 'border-white/[0.08] hover:border-primary/40 hover:glass-panel-elevated'
               }`}
               onClick={() => setSelectedHub('phoenix')}
             >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
-                    Phoenix Citadel Mall
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary font-data-mono font-bold">
-                    0.8 KM
-                  </span>
-                </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Bypass Road, High-Volume Multi-Level Garage</p>
-                <div className="flex items-center gap-space-md pt-1 text-xs font-data-mono text-on-surface">
-                  <span className="flex items-center gap-1">
-                    <span className="text-primary font-bold">🚗 45</span> available
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="text-tertiary font-bold">🏍️ 72</span> available
-                  </span>
+              <div className="flex items-center gap-space-md">
+                <img
+                  src="/assets/hub_citadel.jpg"
+                  alt="Phoenix Citadel Grand Deck covered parking facility on Bypass Road Indore"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 border border-white/[0.08]"
+                />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
+                      Phoenix Citadel Mall
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full glass-pill text-tertiary font-data-mono font-bold border border-tertiary/30">
+                      0.8 KM
+                    </span>
+                  </div>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">Bypass Road, High-Volume Multi-Level Garage</p>
+                  <div className="flex items-center gap-space-md pt-1 text-xs font-data-mono text-on-surface">
+                    <span className="flex items-center gap-1">
+                      <span className="text-primary font-bold">🚗 45</span> available
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="text-tertiary font-bold">🏍️ 72</span> available
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-space-xs shrink-0">
@@ -676,7 +736,7 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
                     e.stopPropagation();
                     openReservationModal('Phoenix Citadel Mall', '₹50/hr', 'Bay C-09');
                   }}
-                  className="px-space-md py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow-sm cursor-pointer"
+                  className="px-space-md py-1.5 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow-sm cursor-pointer"
                 >
                   Reserve Spot
                 </button>
@@ -685,33 +745,40 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
 
             {/* Hub Card 2: Brilliant Convention */}
             <div
-              className={`hub-card p-space-md rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-md shadow-sm cursor-pointer ${
+              className={`hub-card p-space-md rounded-2xl glass-panel transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-md shadow-sm cursor-pointer border ${
                 selectedHub === 'brilliant'
-                  ? 'ring-2 ring-primary bg-surface-container'
-                  : 'bg-surface-container-low hover:bg-surface-container'
+                  ? 'border-primary ring-2 ring-primary/40 glass-panel-elevated'
+                  : 'border-white/[0.08] hover:border-primary/40 hover:glass-panel-elevated'
               }`}
               onClick={() => setSelectedHub('brilliant')}
             >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
-                    Brilliant Convention Centre
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary font-data-mono font-bold">
-                    1.4 KM
-                  </span>
-                </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Scheme 78, Vijay Nagar • Fast EV Charging Hub</p>
-                <div className="flex items-center gap-space-md pt-1 text-xs font-data-mono text-on-surface">
-                  <span className="flex items-center gap-1">
-                    <span className="text-primary font-bold">🚗 28</span> available
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="text-tertiary font-bold">🏍️ 110</span> available
-                  </span>
-                  <span className="text-tertiary flex items-center gap-0.5 text-[11px] font-bold">
-                    <span className="material-symbols-outlined text-[13px]">bolt</span> EV Ready
-                  </span>
+              <div className="flex items-center gap-space-md">
+                <img
+                  src="/assets/hub_brilliant.jpg"
+                  alt="Brilliant Convention Centre premium subterranean parking garage in Vijay Nagar Indore"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 border border-white/[0.08]"
+                />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
+                      Brilliant Convention Centre
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full glass-pill text-tertiary font-data-mono font-bold border border-tertiary/30">
+                      1.4 KM
+                    </span>
+                  </div>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">Scheme 78, Vijay Nagar • Fast EV Charging Hub</p>
+                  <div className="flex items-center gap-space-md pt-1 text-xs font-data-mono text-on-surface">
+                    <span className="flex items-center gap-1">
+                      <span className="text-primary font-bold">🚗 28</span> available
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="text-tertiary font-bold">🏍️ 110</span> available
+                    </span>
+                    <span className="text-tertiary flex items-center gap-0.5 text-[11px] font-bold">
+                      <span className="material-symbols-outlined text-[13px]">bolt</span> EV Ready
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-space-xs shrink-0">
@@ -724,7 +791,7 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
                     e.stopPropagation();
                     openReservationModal('Brilliant Convention Centre', '₹40/hr', 'Bay E-04 (EV 350kW)');
                   }}
-                  className="px-space-md py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow-sm cursor-pointer"
+                  className="px-space-md py-1.5 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow-sm cursor-pointer"
                 >
                   Reserve Spot
                 </button>
@@ -733,30 +800,37 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
 
             {/* Hub Card 3: 56 Dukan */}
             <div
-              className={`hub-card p-space-md rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-md shadow-sm cursor-pointer ${
+              className={`hub-card p-space-md rounded-2xl glass-panel transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-md shadow-sm cursor-pointer border ${
                 selectedHub === '56dukan'
-                  ? 'ring-2 ring-primary bg-surface-container'
-                  : 'bg-surface-container-low hover:bg-surface-container'
+                  ? 'border-primary ring-2 ring-primary/40 glass-panel-elevated'
+                  : 'border-white/[0.08] hover:border-primary/40 hover:glass-panel-elevated'
               }`}
               onClick={() => setSelectedHub('56dukan')}
             >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
-                    56 Dukan Culinary Hub
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary font-data-mono font-bold">
-                    2.1 KM
-                  </span>
-                </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">New Palasia, Automated Valet &amp; High-Density Bay</p>
-                <div className="flex items-center gap-space-md pt-1 text-xs font-data-mono text-on-surface">
-                  <span className="flex items-center gap-1">
-                    <span className="text-primary font-bold">🚗 12</span> available
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="text-tertiary font-bold">🏍️ 85</span> available
-                  </span>
+              <div className="flex items-center gap-space-md">
+                <img
+                  src="/assets/hub_chappan.jpg"
+                  alt="56 Dukan Culinary Multi-Deck parking facility in New Palasia Indore"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 border border-white/[0.08]"
+                />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
+                      56 Dukan Culinary Hub
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full glass-pill text-tertiary font-data-mono font-bold border border-tertiary/30">
+                      2.1 KM
+                    </span>
+                  </div>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">New Palasia, Automated Valet &amp; High-Density Bay</p>
+                  <div className="flex items-center gap-space-md pt-1 text-xs font-data-mono text-on-surface">
+                    <span className="flex items-center gap-1">
+                      <span className="text-primary font-bold">🚗 12</span> available
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="text-tertiary font-bold">🏍️ 85</span> available
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-space-xs shrink-0">
@@ -769,7 +843,7 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
                     e.stopPropagation();
                     openReservationModal('56 Dukan Culinary Hub', '₹35/hr', 'Bay D-18');
                   }}
-                  className="px-space-md py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow-sm cursor-pointer"
+                  className="px-space-md py-1.5 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow-sm cursor-pointer"
                 >
                   Reserve Spot
                 </button>
@@ -778,30 +852,37 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
 
             {/* Hub Card 4: Holkar Stadium */}
             <div
-              className={`hub-card p-space-md rounded-xl transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-md shadow-sm cursor-pointer ${
+              className={`hub-card p-space-md rounded-2xl glass-panel transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-md shadow-sm cursor-pointer border ${
                 selectedHub === 'holkar'
-                  ? 'ring-2 ring-primary bg-surface-container'
-                  : 'bg-surface-container-low hover:bg-surface-container'
+                  ? 'border-primary ring-2 ring-primary/40 glass-panel-elevated'
+                  : 'border-white/[0.08] hover:border-primary/40 hover:glass-panel-elevated'
               }`}
               onClick={() => setSelectedHub('holkar')}
             >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
-                    Holkar Cricket Stadium
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary-container/20 text-primary font-data-mono font-bold">
-                    3.2 KM
-                  </span>
-                </div>
-                <p className="font-body-sm text-body-sm text-on-surface-variant">Race Course Road • VIP &amp; General Gate Corridors</p>
-                <div className="flex items-center gap-space-md pt-1 text-xs font-data-mono text-on-surface">
-                  <span className="flex items-center gap-1">
-                    <span className="text-primary font-bold">🚗 60</span> available
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <span className="text-tertiary font-bold">🏍️ 140</span> available
-                  </span>
+              <div className="flex items-center gap-space-md">
+                <img
+                  src="/assets/hub_holkar.jpg"
+                  alt="Holkar Stadium VIP & General Ring parking grounds on Race Course Road Indore"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 border border-white/[0.08]"
+                />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
+                      Holkar Cricket Stadium
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full glass-pill text-primary font-data-mono font-bold border border-primary/30">
+                      3.2 KM
+                    </span>
+                  </div>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">Race Course Road • VIP &amp; General Gate Corridors</p>
+                  <div className="flex items-center gap-space-md pt-1 text-xs font-data-mono text-on-surface">
+                    <span className="flex items-center gap-1">
+                      <span className="text-primary font-bold">🚗 60</span> available
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="text-tertiary font-bold">🏍️ 140</span> available
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-space-xs shrink-0">
@@ -814,7 +895,7 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
                     e.stopPropagation();
                     openReservationModal('Holkar Cricket Stadium', '₹80/hr', 'VIP Bay G-01');
                   }}
-                  className="px-space-md py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow-sm cursor-pointer"
+                  className="px-space-md py-1.5 rounded-full bg-primary text-on-primary font-label-md text-xs font-semibold hover:bg-primary-fixed-dim transition-all shadow-sm cursor-pointer"
                 >
                   Reserve Spot
                 </button>
@@ -851,142 +932,190 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
         {/* Event Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
           {/* Event 1 */}
-          <div className="rounded-2xl bg-surface-container-low overflow-hidden flex flex-col justify-between hover:bg-surface-container transition-all group shadow-sm">
-            <div className="p-space-lg space-y-space-sm">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-caps text-[10px] uppercase font-bold">
-                  Concert Surge
-                </span>
-                <span className="font-data-mono text-xs text-on-surface-variant">THIS SATURDAY</span>
-              </div>
-              <span className="font-headline-sm text-headline-sm font-semibold text-on-surface block group-hover:text-primary transition-colors">
-                Arijit Singh Live in Concert
+          <div className="rounded-2xl glass-panel overflow-hidden flex flex-col justify-between hover:glass-panel-elevated transition-all group shadow-sm border border-white/[0.08]">
+            <div className="relative w-full h-40 overflow-hidden bg-surface-container-high">
+              <img
+                src="/assets/event_concert.jpg"
+                alt="Arijit Singh Live concert stadium crowd at Holkar Stadium Indore with illuminated stage beams"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                onError={e => {
+                  e.currentTarget.src =
+                    'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+              <span className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full glass-pill text-primary font-label-caps text-[10px] uppercase font-bold border border-primary/30">
+                Concert Surge
               </span>
-              <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
-                <span className="material-symbols-outlined text-[15px] text-outline">location_on</span>
-                Holkar Stadium, Indore
-              </p>
-              <div className="pt-space-xs font-data-mono text-xs text-secondary-fixed-dim">
-                <span>Doors: 6:30 PM • Gate 4 Ingress</span>
-              </div>
-              <div className="pt-space-xs flex items-center justify-between text-xs font-data-mono">
-                <span className="text-primary font-bold">🚗 120 slots left</span>
-                <span className="text-tertiary font-bold">🏍️ 350 slots</span>
-              </div>
             </div>
-            <div className="p-space-md bg-surface-container-lowest/50">
-              <button
-                type="button"
-                onClick={() => openReservationModal('Arijit Singh Live', '₹150 Flat Pass', 'Event Gate 4 Area')}
-                className="w-full py-2 rounded-lg bg-surface-container-high text-on-surface group-hover:bg-primary-container group-hover:text-on-primary font-label-md text-xs font-semibold transition-all cursor-pointer"
-              >
-                Reserve Event Bay
-              </button>
+
+            <div className="p-space-md space-y-space-xs flex-1 flex flex-col justify-between">
+              <div>
+                <span className="font-data-mono text-[10px] text-tertiary block font-semibold">THIS SATURDAY</span>
+                <h3 className="font-headline-sm text-base font-bold text-on-surface group-hover:text-primary transition-colors mt-0.5">
+                  Arijit Singh Live in Concert
+                </h3>
+                <p className="font-body-sm text-xs text-on-surface-variant flex items-center gap-1 mt-1">
+                  <span className="material-symbols-outlined text-[14px] text-primary">location_on</span>
+                  Holkar Stadium, Indore
+                </p>
+                <div className="pt-2 flex items-center justify-between text-xs font-data-mono">
+                  <span className="text-primary font-bold">🚗 120 slots left</span>
+                  <span className="text-tertiary font-bold">🏍️ 350 slots</span>
+                </div>
+              </div>
+
+              <div className="pt-space-sm">
+                <button
+                  type="button"
+                  onClick={() => openReservationModal('Arijit Singh Live', '₹150 Flat Pass', 'Event Gate 4 Area')}
+                  className="w-full py-2 rounded-xl bg-primary-container text-on-primary group-hover:bg-primary font-label-md text-xs font-semibold transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[15px]">confirmation_number</span>
+                  <span>Reserve Event Bay</span>
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Event 2 */}
-          <div className="rounded-2xl bg-surface-container-low overflow-hidden flex flex-col justify-between hover:bg-surface-container transition-all group shadow-sm">
-            <div className="p-space-lg space-y-space-sm">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary font-label-caps text-[10px] uppercase font-bold">
-                  Conference
-                </span>
-                <span className="font-data-mono text-xs text-on-surface-variant">APR 4–6, 2026</span>
-              </div>
-              <span className="font-headline-sm text-headline-sm font-semibold text-on-surface block group-hover:text-primary transition-colors">
-                Indore Tech &amp; Startup Expo
+          <div className="rounded-2xl glass-panel overflow-hidden flex flex-col justify-between hover:glass-panel-elevated transition-all group shadow-sm border border-white/[0.08]">
+            <div className="relative w-full h-40 overflow-hidden bg-surface-container-high">
+              <img
+                src="/assets/event_tech.jpg"
+                alt="Indore Tech and Startup Expo modern conference pavilion at Brilliant Convention Centre"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                onError={e => {
+                  e.currentTarget.src =
+                    'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+              <span className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full glass-pill text-tertiary font-label-caps text-[10px] uppercase font-bold border border-tertiary/30">
+                Conference
               </span>
-              <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
-                <span className="material-symbols-outlined text-[15px] text-outline">location_on</span>
-                Brilliant Convention Centre
-              </p>
-              <div className="pt-space-xs font-data-mono text-xs text-secondary-fixed-dim">
-                <span>Full-Day Business Pass Parking</span>
-              </div>
-              <div className="pt-space-xs flex items-center justify-between text-xs font-data-mono">
-                <span className="text-primary font-bold">🚗 210 slots left</span>
-                <span className="text-tertiary font-bold">🏍️ 400 slots</span>
-              </div>
             </div>
-            <div className="p-space-md bg-surface-container-lowest/50">
-              <button
-                type="button"
-                onClick={() => openReservationModal('Indore Tech Expo 2026', '₹120 Flat Pass', 'BCC Hall 2 Valet Bay')}
-                className="w-full py-2 rounded-lg bg-surface-container-high text-on-surface group-hover:bg-primary-container group-hover:text-on-primary font-label-md text-xs font-semibold transition-all cursor-pointer"
-              >
-                Reserve Event Bay
-              </button>
+
+            <div className="p-space-md space-y-space-xs flex-1 flex flex-col justify-between">
+              <div>
+                <span className="font-data-mono text-[10px] text-tertiary block font-semibold">APR 4–6, 2026</span>
+                <h3 className="font-headline-sm text-base font-bold text-on-surface group-hover:text-primary transition-colors mt-0.5">
+                  Indore Tech &amp; Startup Expo
+                </h3>
+                <p className="font-body-sm text-xs text-on-surface-variant flex items-center gap-1 mt-1">
+                  <span className="material-symbols-outlined text-[14px] text-primary">location_on</span>
+                  Brilliant Convention Centre
+                </p>
+                <div className="pt-2 flex items-center justify-between text-xs font-data-mono">
+                  <span className="text-primary font-bold">🚗 210 slots left</span>
+                  <span className="text-tertiary font-bold">🏍️ 400 slots</span>
+                </div>
+              </div>
+
+              <div className="pt-space-sm">
+                <button
+                  type="button"
+                  onClick={() => openReservationModal('Indore Tech Expo 2026', '₹120 Flat Pass', 'BCC Hall 2 Valet Bay')}
+                  className="w-full py-2 rounded-xl bg-primary-container text-on-primary group-hover:bg-primary font-label-md text-xs font-semibold transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[15px]">confirmation_number</span>
+                  <span>Reserve Event Bay</span>
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Event 3 */}
-          <div className="rounded-2xl bg-surface-container-low overflow-hidden flex flex-col justify-between hover:bg-surface-container transition-all group shadow-sm">
-            <div className="p-space-lg space-y-space-sm">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-caps text-[10px] uppercase font-bold">
-                  Campus Fest
-                </span>
-                <span className="font-data-mono text-xs text-on-surface-variant">NEXT WEEKEND</span>
-              </div>
-              <span className="font-headline-sm text-headline-sm font-semibold text-on-surface block group-hover:text-primary transition-colors">
-                Euphoria NMIMS Campus Fest
+          <div className="rounded-2xl glass-panel overflow-hidden flex flex-col justify-between hover:glass-panel-elevated transition-all group shadow-sm border border-white/[0.08]">
+            <div className="relative w-full h-40 overflow-hidden bg-surface-container-high">
+              <img
+                src="/assets/event_campus.jpg"
+                alt="Euphoria NMIMS campus student festival evening lights along Super Corridor Indore"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                onError={e => {
+                  e.currentTarget.src =
+                    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=800&q=80';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+              <span className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full glass-pill text-on-surface-variant font-label-caps text-[10px] uppercase font-bold border border-white/20">
+                Campus Fest
               </span>
-              <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
-                <span className="material-symbols-outlined text-[15px] text-outline">location_on</span>
-                NMIMS Campus, Super Corridor
-              </p>
-              <div className="pt-space-xs font-data-mono text-xs text-secondary-fixed-dim">
-                <span>Special Student &amp; Two-Wheeler Priority</span>
-              </div>
-              <div className="pt-space-xs flex items-center justify-between text-xs font-data-mono">
-                <span className="text-primary font-bold">🚗 45 slots left</span>
-                <span className="text-tertiary font-bold">🏍️ 220 slots</span>
-              </div>
             </div>
-            <div className="p-space-md bg-surface-container-lowest/50">
-              <button
-                type="button"
-                onClick={() => openReservationModal('Euphoria NMIMS Fest', '₹60 Flat Pass', 'North Ground Quad')}
-                className="w-full py-2 rounded-lg bg-surface-container-high text-on-surface group-hover:bg-primary-container group-hover:text-on-primary font-label-md text-xs font-semibold transition-all cursor-pointer"
-              >
-                Reserve Event Bay
-              </button>
+
+            <div className="p-space-md space-y-space-xs flex-1 flex flex-col justify-between">
+              <div>
+                <span className="font-data-mono text-[10px] text-tertiary block font-semibold">NEXT WEEKEND</span>
+                <h3 className="font-headline-sm text-base font-bold text-on-surface group-hover:text-primary transition-colors mt-0.5">
+                  Euphoria NMIMS Campus Fest
+                </h3>
+                <p className="font-body-sm text-xs text-on-surface-variant flex items-center gap-1 mt-1">
+                  <span className="material-symbols-outlined text-[14px] text-primary">location_on</span>
+                  NMIMS Campus, Super Corridor
+                </p>
+                <div className="pt-2 flex items-center justify-between text-xs font-data-mono">
+                  <span className="text-primary font-bold">🚗 45 slots left</span>
+                  <span className="text-tertiary font-bold">🏍️ 220 slots</span>
+                </div>
+              </div>
+
+              <div className="pt-space-sm">
+                <button
+                  type="button"
+                  onClick={() => openReservationModal('Euphoria NMIMS Fest', '₹60 Flat Pass', 'North Ground Quad')}
+                  className="w-full py-2 rounded-xl bg-primary-container text-on-primary group-hover:bg-primary font-label-md text-xs font-semibold transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[15px]">confirmation_number</span>
+                  <span>Reserve Event Bay</span>
+                </button>
+              </div>
             </div>
           </div>
 
           {/* Event 4 */}
-          <div className="rounded-2xl bg-surface-container-low overflow-hidden flex flex-col justify-between hover:bg-surface-container transition-all group shadow-sm">
-            <div className="p-space-lg space-y-space-sm">
-              <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-caps text-[10px] uppercase font-bold">
-                  IPL Screening
-                </span>
-                <span className="font-data-mono text-xs text-on-surface-variant">APR 12, 2026</span>
-              </div>
-              <span className="font-headline-sm text-headline-sm font-semibold text-on-surface block group-hover:text-primary transition-colors">
-                IPL Fan Park &amp; Arena
+          <div className="rounded-2xl glass-panel overflow-hidden flex flex-col justify-between hover:glass-panel-elevated transition-all group shadow-sm border border-white/[0.08]">
+            <div className="relative w-full h-40 overflow-hidden bg-surface-container-high">
+              <img
+                src="/assets/event_stadium.jpg"
+                alt="IPL Fan Park and sports arena floodlit match screening at Nehru Stadium Ground Indore"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                onError={e => {
+                  e.currentTarget.src =
+                    'https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?auto=format&fit=crop&w=800&q=80';
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-transparent to-transparent"></div>
+              <span className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full glass-pill text-primary font-label-caps text-[10px] uppercase font-bold border border-primary/30">
+                IPL Screening
               </span>
-              <p className="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
-                <span className="material-symbols-outlined text-[15px] text-outline">location_on</span>
-                Nehru Stadium Ground
-              </p>
-              <div className="pt-space-xs font-data-mono text-xs text-secondary-fixed-dim">
-                <span>7:00 PM Match Screening Lock</span>
-              </div>
-              <div className="pt-space-xs flex items-center justify-between text-xs font-data-mono">
-                <span className="text-primary font-bold">🚗 85 slots left</span>
-                <span className="text-tertiary font-bold">🏍️ 310 slots</span>
-              </div>
             </div>
-            <div className="p-space-md bg-surface-container-lowest/50">
-              <button
-                type="button"
-                onClick={() => openReservationModal('IPL Fan Park Arena', '₹100 Flat Pass', 'Nehru Ground Ring Bay')}
-                className="w-full py-2 rounded-lg bg-surface-container-high text-on-surface group-hover:bg-primary-container group-hover:text-on-primary font-label-md text-xs font-semibold transition-all cursor-pointer"
-              >
-                Reserve Event Bay
-              </button>
+
+            <div className="p-space-md space-y-space-xs flex-1 flex flex-col justify-between">
+              <div>
+                <span className="font-data-mono text-[10px] text-tertiary block font-semibold">APR 12, 2026</span>
+                <h3 className="font-headline-sm text-base font-bold text-on-surface group-hover:text-primary transition-colors mt-0.5">
+                  IPL Fan Park &amp; Arena
+                </h3>
+                <p className="font-body-sm text-xs text-on-surface-variant flex items-center gap-1 mt-1">
+                  <span className="material-symbols-outlined text-[14px] text-primary">location_on</span>
+                  Nehru Stadium Ground
+                </p>
+                <div className="pt-2 flex items-center justify-between text-xs font-data-mono">
+                  <span className="text-primary font-bold">🚗 85 slots left</span>
+                  <span className="text-tertiary font-bold">🏍️ 310 slots</span>
+                </div>
+              </div>
+
+              <div className="pt-space-sm">
+                <button
+                  type="button"
+                  onClick={() => openReservationModal('IPL Fan Park Arena', '₹100 Flat Pass', 'Nehru Ground Ring Bay')}
+                  className="w-full py-2 rounded-xl bg-primary-container text-on-primary group-hover:bg-primary font-label-md text-xs font-semibold transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-[15px]">confirmation_number</span>
+                  <span>Reserve Event Bay</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1480,19 +1609,19 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
 
       {/* INTERACTIVE RESERVATION MODAL (Vanilla JS/React Controlled) */}
       {reservationModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-container-lowest/80 backdrop-blur-xl p-margin-mobile">
-          <div className="w-full max-w-md p-space-lg rounded-2xl bg-surface-container shadow-2xl space-y-space-md border border-outline-variant/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-2xl p-margin-mobile animate-fadeIn">
+          <div className="w-full max-w-md p-space-lg rounded-3xl glass-panel-elevated shadow-2xl space-y-space-md border border-primary/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-space-xs">
                 <span className="w-2.5 h-2.5 rounded-full bg-tertiary animate-pulse"></span>
-                <span className="font-label-caps text-label-caps text-on-surface uppercase font-bold">
+                <span className="font-label-caps text-label-caps text-on-surface uppercase font-bold tracking-wider">
                   INSTANT RESERVATION PASS
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setReservationModal(prev => ({ ...prev, isOpen: false }))}
-                className="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 rounded-full glass-pill text-on-surface-variant hover:text-on-surface flex items-center justify-center cursor-pointer transition-colors"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
@@ -1570,19 +1699,19 @@ export default function Home({ vehicleMode = 'car', setVehicleMode }) {
 
       {/* INTERACTIVE HOST REGISTRATION MODAL */}
       {hostModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-surface-container-lowest/80 backdrop-blur-xl p-margin-mobile">
-          <div className="w-full max-w-md p-space-lg rounded-2xl bg-surface-container shadow-2xl space-y-space-md border border-outline-variant/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-2xl p-margin-mobile animate-fadeIn">
+          <div className="w-full max-w-md p-space-lg rounded-3xl glass-panel-elevated shadow-2xl space-y-space-md border border-tertiary/30">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-space-xs">
                 <span className="material-symbols-outlined text-primary text-[20px]">garage</span>
-                <span className="font-label-caps text-label-caps text-on-surface uppercase font-bold">
+                <span className="font-label-caps text-label-caps text-on-surface uppercase font-bold tracking-wider">
                   ONBOARD YOUR SPACE
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setHostModalOpen(false)}
-                className="w-8 h-8 rounded-full bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 rounded-full glass-pill text-on-surface-variant hover:text-on-surface flex items-center justify-center cursor-pointer transition-colors"
               >
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>

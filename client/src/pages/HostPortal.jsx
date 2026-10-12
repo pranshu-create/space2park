@@ -27,7 +27,17 @@ export default function HostPortal() {
     cultural: { pvs: 0.42, ppv: 2.6, pf: 1.18, label: 'Cultural / Heritage Festival' }
   };
 
+  const eventImages = {
+    stadium_match: { src: '/assets/event_stadium.jpg', alt: 'Holkar Cricket Stadium sports match crowd in Indore' },
+    concert: { src: '/assets/event_concert.jpg', alt: 'Live music concert stage performance with thousands of fans' },
+    college_fest: { src: '/assets/event_campus.jpg', alt: 'Indore University campus grounds hosting annual youth festival' },
+    exhibition: { src: '/assets/event_tech.jpg', alt: 'Brilliant Convention Centre high-tech exhibition hall' },
+    food_bazaar: { src: '/assets/hub_chappan.jpg', alt: '56 Dukan evening culinary street market in Indore' },
+    cultural: { src: '/assets/hub_citadel.jpg', alt: 'Cultural celebration and retail festival crowd in Indore' }
+  };
+
   const currentParams = lookupTable[eventType] || lookupTable.concert;
+  const activeEventImg = eventImages[eventType] || eventImages.concert;
 
   // Formula: D = Attendance × PrivateVehicleShare ÷ PersonsPerVehicle × PeakFactor − ExistingOfficialCapacity
   const rawVehicles = (attendance * currentParams.pvs) / currentParams.ppv;
@@ -89,13 +99,13 @@ export default function HostPortal() {
         </div>
 
         {/* Tab Controls */}
-        <div className="flex items-center gap-2 p-1 rounded-full bg-surface-container-low border border-outline-variant/40">
+        <div className="flex items-center gap-2 p-1.5 rounded-full glass-panel border border-outline-variant/40">
           <button
             type="button"
             onClick={() => setActiveTab('estimator')}
             className={`px-4 py-1.5 rounded-full text-xs font-label-caps uppercase font-bold transition-all ${
               activeTab === 'estimator'
-                ? 'bg-primary-container text-on-primary shadow-sm'
+                ? 'bg-primary-container text-on-primary shadow-sm glass-pill'
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
@@ -106,7 +116,7 @@ export default function HostPortal() {
             onClick={() => setActiveTab('create')}
             className={`px-4 py-1.5 rounded-full text-xs font-label-caps uppercase font-bold transition-all ${
               activeTab === 'create'
-                ? 'bg-primary-container text-on-primary shadow-sm'
+                ? 'bg-primary-container text-on-primary shadow-sm glass-pill'
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
@@ -117,7 +127,7 @@ export default function HostPortal() {
             onClick={() => setActiveTab('dashboard')}
             className={`px-4 py-1.5 rounded-full text-xs font-label-caps uppercase font-bold transition-all ${
               activeTab === 'dashboard'
-                ? 'bg-primary-container text-on-primary shadow-sm'
+                ? 'bg-primary-container text-on-primary shadow-sm glass-pill'
                 : 'text-on-surface-variant hover:text-on-surface'
             }`}
           >
@@ -130,12 +140,27 @@ export default function HostPortal() {
       {activeTab === 'estimator' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
           {/* Controls Column */}
-          <div className="lg:col-span-6 flex flex-col gap-space-md p-space-xl rounded-3xl bg-surface-container-low border border-outline-variant/40 shadow-xl">
+          <div className="lg:col-span-6 flex flex-col gap-space-md p-space-xl rounded-3xl glass-panel-elevated border border-white/[0.08] shadow-2xl">
+            {/* Visual Event Banner with Alt Text */}
+            <div className="relative w-full h-36 rounded-2xl overflow-hidden bg-surface-container-high border border-white/[0.06] mb-1">
+              <img
+                src={activeEventImg.src}
+                alt={activeEventImg.alt}
+                className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent"></div>
+              <div className="absolute bottom-2.5 left-3">
+                <span className="font-headline-sm text-sm font-bold text-on-surface">
+                  {currentParams.label}
+                </span>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/30">
               <span className="font-headline-sm text-lg font-bold text-on-surface">
                 Estimator Model Parameters
               </span>
-              <span className="text-[10px] font-label-caps uppercase px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary border border-tertiary/30">
+              <span className="text-[10px] font-label-caps uppercase px-2.5 py-0.5 rounded-full glass-pill text-tertiary border border-tertiary/30 font-bold">
                 Stage A: Rule-Based Baseline
               </span>
             </div>
@@ -230,9 +255,9 @@ export default function HostPortal() {
 
           {/* Results Output Column */}
           <div className="lg:col-span-6 flex flex-col gap-space-md">
-            <div className="p-space-xl rounded-3xl bg-surface-container-low border-2 border-primary/40 shadow-2xl flex flex-col gap-space-lg">
+            <div className="p-space-xl rounded-3xl glass-panel-elevated border-2 border-primary/40 shadow-2xl flex flex-col gap-space-lg">
               <div>
-                <span className="text-[10px] font-label-caps uppercase px-2.5 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30 font-bold">
+                <span className="text-[10px] font-label-caps uppercase px-2.5 py-0.5 rounded-full glass-pill text-primary border border-primary/30 font-bold">
                   STAGE A DEMAND OUTPUT
                 </span>
                 <h3 className="font-headline-md text-3xl font-bold text-on-surface mt-2">
@@ -244,7 +269,7 @@ export default function HostPortal() {
               </div>
 
               {/* Confidence Range Band (P10 to P90) */}
-              <div className="p-space-md rounded-2xl bg-surface-container border border-tertiary/40 flex flex-col gap-2">
+              <div className="p-space-md rounded-2xl glass-panel border border-tertiary/40 flex flex-col gap-2">
                 <div className="flex items-center justify-between text-xs font-label-caps uppercase">
                   <span className="text-tertiary font-bold">Confidence Range (P10 to P90)</span>
                   <span className="text-on-surface font-data-mono">80% Interval</span>
@@ -262,7 +287,7 @@ export default function HostPortal() {
 
               {/* 10% Reserve Pool Buffer */}
               <div className="grid grid-cols-2 gap-space-md">
-                <div className="p-space-sm rounded-xl bg-surface-container text-xs font-data-mono">
+                <div className="p-space-sm rounded-xl glass-panel text-xs font-data-mono">
                   <span className="text-[10px] font-label-caps text-on-surface-variant block uppercase">
                     10% Hidden Reserve
                   </span>
@@ -272,7 +297,7 @@ export default function HostPortal() {
                   </span>
                 </div>
 
-                <div className="p-space-sm rounded-xl bg-surface-container text-xs font-data-mono">
+                <div className="p-space-sm rounded-xl glass-panel text-xs font-data-mono">
                   <span className="text-[10px] font-label-caps text-on-surface-variant block uppercase">
                     Grid Ingress Buffer
                   </span>
@@ -298,7 +323,7 @@ export default function HostPortal() {
 
       {/* TAB 2: CREATE EVENT WIZARD */}
       {activeTab === 'create' && (
-        <div className="max-w-2xl mx-auto p-space-xl rounded-3xl bg-surface-container-low border border-outline-variant/40 shadow-xl">
+        <div className="max-w-2xl mx-auto p-space-xl rounded-3xl glass-panel-elevated border border-white/[0.08] shadow-2xl">
           <div className="mb-space-lg pb-space-sm border-b border-outline-variant/30">
             <h3 className="font-headline-md text-2xl font-bold text-on-surface">Register Event Corridor</h3>
             <p className="text-xs text-on-surface-variant">
@@ -359,7 +384,7 @@ export default function HostPortal() {
               </div>
             </div>
 
-            <div className="p-space-sm rounded-xl bg-surface-container text-xs font-data-mono text-tertiary">
+            <div className="p-space-sm rounded-xl glass-panel text-xs font-data-mono text-tertiary">
               Calculated Demand Deficit: <strong>{predictedDemand} slots</strong> will be requested from verified Indore private hosts.
             </div>
 
@@ -378,7 +403,7 @@ export default function HostPortal() {
       {activeTab === 'dashboard' && (
         <div className="flex flex-col gap-space-lg">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-md">
-            <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30">
+            <div className="p-space-lg rounded-2xl glass-panel hover:glass-panel-elevated border border-white/[0.08] transition-all">
               <span className="text-[10px] font-label-caps uppercase text-on-surface-variant block">
                 Active Event
               </span>
@@ -388,7 +413,7 @@ export default function HostPortal() {
               <span className="text-xs font-data-mono text-tertiary">Approved & Live</span>
             </div>
 
-            <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30">
+            <div className="p-space-lg rounded-2xl glass-panel hover:glass-panel-elevated border border-white/[0.08] transition-all">
               <span className="text-[10px] font-label-caps uppercase text-on-surface-variant block">
                 Network Fill Rate
               </span>
@@ -398,7 +423,7 @@ export default function HostPortal() {
               <span className="text-xs font-data-mono text-on-surface-variant">2,140 / 2,540 booked</span>
             </div>
 
-            <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30">
+            <div className="p-space-lg rounded-2xl glass-panel hover:glass-panel-elevated border border-white/[0.08] transition-all">
               <span className="text-[10px] font-label-caps uppercase text-on-surface-variant block">
                 No-Show Rate
               </span>

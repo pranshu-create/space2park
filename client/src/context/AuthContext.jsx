@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check session on load
+    // Check session on load or auto-initialize demo seeker session
     if (token) {
       fetch('/api/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
@@ -22,13 +22,13 @@ export function AuthProvider({ children }) {
             setUser(data.user);
             localStorage.setItem('s2p_user', JSON.stringify(data.user));
           } else {
-            logout();
+            demoLogin('seeker');
           }
         })
-        .catch(() => logout())
+        .catch(() => demoLogin('seeker'))
         .finally(() => setLoading(false));
     } else {
-      setLoading(false);
+      demoLogin('seeker').finally(() => setLoading(false));
     }
   }, [token]);
 

@@ -45,6 +45,19 @@ export default function MyBookings() {
 
   // Fetch user bookings
   const fetchBookings = () => {
+    // Check state or local storage for newly issued pass
+    let activeBooking = location.state?.newBooking;
+    if (!activeBooking) {
+      try {
+        activeBooking = JSON.parse(localStorage.getItem('s2p_last_booking') || 'null');
+      } catch (e) {
+        // ignore JSON parse error
+      }
+    }
+    if (activeBooking && !selectedBooking) {
+      setSelectedBooking(activeBooking);
+    }
+
     fetch('/api/bookings/my-bookings', {
       headers: {
         Authorization: `Bearer ${token || localStorage.getItem('s2p_token')}`
@@ -52,16 +65,23 @@ export default function MyBookings() {
     })
       .then(res => res.json())
       .then(data => {
-        setBookings(data);
-        if (data.length > 0) {
-          const newBooking = location.state?.newBooking;
-          const found = newBooking ? data.find(b => b.id === newBooking.id) : data[0];
-          setSelectedBooking(found || data[0]);
+        let combined = Array.isArray(data) ? [...data] : [];
+        if (activeBooking && !combined.some(b => b.id === activeBooking.id)) {
+          combined = [activeBooking, ...combined];
+        }
+        setBookings(combined);
+        if (combined.length > 0) {
+          const found = activeBooking ? combined.find(b => b.id === activeBooking.id) : combined[0];
+          setSelectedBooking(found || combined[0]);
         }
         setLoading(false);
       })
       .catch(err => {
         console.error('Failed to load bookings:', err);
+        if (activeBooking) {
+          setBookings([activeBooking]);
+          setSelectedBooking(activeBooking);
+        }
         setLoading(false);
       });
   };
@@ -167,13 +187,13 @@ export default function MyBookings() {
 
         {/* Active Vehicle & Status Telemetry Strip */}
         <div className="w-full max-w-7xl mx-auto mb-space-lg">
-          <div className="w-full bg-surface-container-low rounded-xl p-space-md md:p-space-lg shadow-xl relative overflow-hidden">
+          <div className="w-full glass-panel rounded-2xl p-space-md md:p-space-lg shadow-xl relative overflow-hidden border border-white/[0.08]">
             {/* Subtle linear accent glow */}
             <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-80"></div>
 
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-space-md">
               <div className="flex items-center gap-space-md">
-                <div className="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center text-primary shrink-0 shadow-md">
+                <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary shrink-0 shadow-md">
                   <span className="material-symbols-outlined text-[26px]">verified</span>
                 </div>
                 <div className="flex flex-col">
@@ -198,7 +218,7 @@ export default function MyBookings() {
               </div>
 
               {/* Dynamic Arrival Countdown Component */}
-              <div className="flex items-center gap-space-sm bg-surface-container px-space-md py-space-sm rounded-lg shrink-0">
+              <div className="flex items-center gap-space-sm glass-panel px-space-md py-space-sm rounded-xl shrink-0 border border-white/[0.06]">
                 <div className="flex flex-col text-right">
                   <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">
                     Estimated Ingress
@@ -247,7 +267,7 @@ export default function MyBookings() {
         {/* Centered Dual-Card Luxury Cockpit Grid */}
         <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-space-lg">
           {/* LEFT CARD: Contactless Barrier Pass & Escrow Details (Col 6) */}
-          <div className="lg:col-span-6 flex flex-col bg-surface-container-low rounded-xl p-space-lg md:p-space-xl shadow-2xl relative overflow-hidden">
+          <div className="lg:col-span-6 flex flex-col glass-panel-elevated rounded-3xl p-space-lg md:p-space-xl shadow-2xl relative overflow-hidden border border-primary/30">
             {/* Holographic ambient highlight */}
             <div className="absolute -top-24 -right-24 w-56 h-56 bg-primary-container/10 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -255,7 +275,7 @@ export default function MyBookings() {
             <div className="flex items-start justify-between pb-space-md">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-caps text-label-caps tracking-widest uppercase font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full glass-pill text-primary font-label-caps text-label-caps tracking-widest uppercase font-bold border border-primary/30">
                     FASTPASS VIP
                   </span>
                   <span className="font-data-mono text-xs text-on-surface-variant">{currentPassId}</span>
@@ -271,14 +291,14 @@ export default function MyBookings() {
             </div>
 
             {/* Centerpiece: Holographic QR Shield & ANPR Notice */}
-            <div className="my-space-md p-space-md rounded-xl bg-surface-container flex flex-col sm:flex-row items-center gap-space-md relative group">
+            <div className="my-space-md p-space-md rounded-2xl glass-panel flex flex-col sm:flex-row items-center gap-space-md relative group border border-white/[0.08]">
               {/* QR Visual Representation */}
-              <div className="relative shrink-0 p-3 bg-surface-container-lowest rounded-lg shadow-inner">
-                <div className="w-36 h-36 bg-surface-container-high rounded p-1 flex items-center justify-center relative overflow-hidden">
+              <div className="relative shrink-0 p-3 bg-surface-container-lowest rounded-xl shadow-inner border border-white/[0.05]">
+                <div className="w-36 h-36 bg-surface-container-high rounded-lg p-1 flex items-center justify-center relative overflow-hidden">
                   {selectedBooking?.qrCodeDataUrl ? (
                     <img
                       src={selectedBooking.qrCodeDataUrl}
-                      alt="Signed QR Code"
+                      alt="Cryptographically signed FASTPASS QR token for contactless barrier ingress"
                       className="w-full h-full object-contain"
                     />
                   ) : (
@@ -340,7 +360,7 @@ export default function MyBookings() {
 
             {/* Bay & Vehicle Telemetry Grid */}
             <div className="grid grid-cols-2 gap-space-sm my-space-sm">
-              <div className="p-space-md rounded-lg bg-surface-container">
+              <div className="p-space-md rounded-2xl glass-panel border border-white/[0.06]">
                 <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">Designated Space</span>
                 <div className="font-headline-md text-headline-md text-primary font-bold mt-1 tracking-tight">
                   BAY {currentSlot}
@@ -349,7 +369,7 @@ export default function MyBookings() {
                   Ground Ramp West • Wide Bay
                 </span>
               </div>
-              <div className="p-space-md rounded-lg bg-surface-container">
+              <div className="p-space-md rounded-2xl glass-panel border border-white/[0.06]">
                 <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">Vehicle Profile</span>
                 <div className="font-headline-sm text-headline-sm text-on-surface font-semibold mt-1 truncate">
                   Porsche Taycan
@@ -358,7 +378,7 @@ export default function MyBookings() {
                   EV Fast-Dock Compatible
                 </span>
               </div>
-              <div className="p-space-md rounded-lg bg-surface-container">
+              <div className="p-space-md rounded-2xl glass-panel border border-white/[0.06]">
                 <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">Session Window</span>
                 <div className="font-data-mono text-body-lg text-on-surface font-semibold mt-1">
                   07:30 PM – 09:30 PM
@@ -367,7 +387,7 @@ export default function MyBookings() {
                   2 Hours Pre-Booked
                 </span>
               </div>
-              <div className="p-space-md rounded-lg bg-surface-container">
+              <div className="p-space-md rounded-2xl glass-panel border border-white/[0.06]">
                 <span className="font-label-caps text-label-caps text-on-surface-variant uppercase">Tariff Settlement</span>
                 <div className="font-headline-sm text-headline-sm text-on-surface font-semibold mt-1 flex items-center gap-1">
                   ₹{currentAmount}{' '}
@@ -393,7 +413,7 @@ export default function MyBookings() {
                       'bolt'
                     )
                   }
-                  className="px-space-md py-space-sm rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="px-space-md py-space-sm rounded-xl glass-panel hover:glass-panel-elevated text-on-surface font-label-md text-label-md flex items-center justify-center gap-2 transition-all cursor-pointer border border-white/[0.08]"
                 >
                   <span className="material-symbols-outlined text-[18px] text-tertiary">bolt</span>
                   <span>Initiate 350kW EV Charge</span>
@@ -407,7 +427,7 @@ export default function MyBookings() {
                       'schedule'
                     )
                   }
-                  className="px-space-md py-space-sm rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-md text-label-md flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  className="px-space-md py-space-sm rounded-xl glass-panel hover:glass-panel-elevated text-on-surface font-label-md text-label-md flex items-center justify-center gap-2 transition-all cursor-pointer border border-white/[0.08]"
                 >
                   <span className="material-symbols-outlined text-[18px] text-primary">more_time</span>
                   <span>Extend Time (+1 Hr)</span>
@@ -464,11 +484,11 @@ export default function MyBookings() {
           </div>
 
           {/* RIGHT CARD: Live Ingress Navigation HUD & Telemetry (Col 6) */}
-          <div className="lg:col-span-6 flex flex-col bg-surface-container-low rounded-xl p-space-lg md:p-space-xl shadow-2xl relative overflow-hidden">
+          <div className="lg:col-span-6 flex flex-col glass-panel-elevated rounded-3xl p-space-lg md:p-space-xl shadow-2xl relative overflow-hidden border border-primary/30">
             {/* Navigation Top Bar */}
             <div className="flex items-start justify-between pb-space-md">
               <div className="flex items-center gap-space-sm">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 border border-primary/20">
                   <span className="material-symbols-outlined text-[24px]">turn_sharp_right</span>
                 </div>
                 <div>
@@ -653,8 +673,8 @@ export default function MyBookings() {
         {/* Secondary Context & Live Deck Diagnostics Strip */}
         <div className="w-full max-w-7xl mx-auto mt-space-lg">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-space-md">
-            <div className="p-space-md rounded-xl bg-surface-container-low shadow-md flex items-center gap-space-md">
-              <div className="w-10 h-10 rounded-lg bg-tertiary/10 text-tertiary flex items-center justify-center shrink-0">
+            <div className="p-space-md rounded-2xl glass-panel shadow-md flex items-center gap-space-md border border-white/[0.08]">
+              <div className="w-10 h-10 rounded-xl bg-tertiary/10 text-tertiary flex items-center justify-center shrink-0 border border-tertiary/20">
                 <span className="material-symbols-outlined text-[22px]">ev_station</span>
               </div>
               <div className="flex flex-col">
@@ -663,8 +683,8 @@ export default function MyBookings() {
                 <span className="font-body-sm text-body-sm text-tertiary font-bold">Active at Bay {currentSlot}</span>
               </div>
             </div>
-            <div className="p-space-md rounded-xl bg-surface-container-low shadow-md flex items-center gap-space-md">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <div className="p-space-md rounded-2xl glass-panel shadow-md flex items-center gap-space-md border border-white/[0.08]">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
                 <span className="material-symbols-outlined text-[22px]">videocam</span>
               </div>
               <div className="flex flex-col">
@@ -673,8 +693,8 @@ export default function MyBookings() {
                 <span className="font-body-sm text-body-sm text-on-surface-variant">Live Guard Monitored</span>
               </div>
             </div>
-            <div className="p-space-md rounded-xl bg-surface-container-low shadow-md flex items-center gap-space-md">
-              <div className="w-10 h-10 rounded-lg bg-surface-container-high text-on-surface flex items-center justify-center shrink-0">
+            <div className="p-space-md rounded-2xl glass-panel shadow-md flex items-center gap-space-md border border-white/[0.08]">
+              <div className="w-10 h-10 rounded-xl bg-surface-container-high text-on-surface flex items-center justify-center shrink-0 border border-white/[0.06]">
                 <span className="material-symbols-outlined text-[22px]">height</span>
               </div>
               <div className="flex flex-col">
@@ -683,8 +703,8 @@ export default function MyBookings() {
                 <span className="font-body-sm text-body-sm text-on-surface-variant">SUV &amp; Sedan Rated</span>
               </div>
             </div>
-            <div className="p-space-md rounded-xl bg-surface-container-low shadow-md flex items-center gap-space-md">
-              <div className="w-10 h-10 rounded-lg bg-surface-container-high text-primary flex items-center justify-center shrink-0">
+            <div className="p-space-md rounded-2xl glass-panel shadow-md flex items-center gap-space-md border border-white/[0.08]">
+              <div className="w-10 h-10 rounded-xl bg-surface-container-high text-primary flex items-center justify-center shrink-0 border border-primary/20">
                 <span className="material-symbols-outlined text-[22px]">security</span>
               </div>
               <div className="flex flex-col">

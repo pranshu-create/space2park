@@ -135,22 +135,47 @@ export default function Events() {
             const coverage = stats.supplyCoveragePct || 0;
             const isActivating = activatingId === event.id;
 
+            // Image lookup with descriptive alt text
+            const name = (event.name || '').toLowerCase();
+            const cat = (event.category || event.eventType || '').toLowerCase();
+            let imgSrc = '/assets/event_stadium.jpg';
+            let imgAlt = `${event.name} parking corridor at ${event.location?.address || 'Indore'} with monitored parking gates`;
+            if (name.includes('arijit') || name.includes('holkar') || cat.includes('stadium') || cat.includes('cricket')) {
+              imgSrc = '/assets/event_concert.jpg';
+              imgAlt = `${event.name} live crowd and stage illumination at Holkar Stadium Indore`;
+            } else if (name.includes('tech') || name.includes('summit') || cat.includes('expo') || cat.includes('convention')) {
+              imgSrc = '/assets/event_tech.jpg';
+              imgAlt = `${event.name} exhibition pavilion and conference entrance at Brilliant Convention Centre`;
+            } else if (name.includes('fest') || name.includes('campus') || name.includes('iit') || cat.includes('college')) {
+              imgSrc = '/assets/event_campus.jpg';
+              imgAlt = `${event.name} campus festival entrance with illuminated pedestrian and parking corridors`;
+            }
+
             return (
               <div
                 key={event.id}
-                className="rounded-3xl bg-surface-container-low border border-outline-variant/40 overflow-hidden flex flex-col justify-between hover:border-primary/60 transition-all group shadow-sm"
+                className="rounded-3xl glass-panel border border-white/[0.08] overflow-hidden flex flex-col justify-between hover:glass-panel-elevated transition-all group shadow-sm"
               >
-                {/* Event Header Banner */}
-                <div className="p-space-lg flex flex-col gap-space-sm border-b border-outline-variant/30 bg-surface-container-lowest/50">
-                  <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-primary-container/20 text-primary font-label-caps text-[10px] uppercase font-bold border border-primary/30">
+                {/* Event Photographic Preview Image with Alt Text */}
+                <div className="relative w-full h-44 overflow-hidden bg-surface-container-high border-b border-white/[0.06]">
+                  <img
+                    src={imgSrc}
+                    alt={imgAlt}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/30 to-transparent"></div>
+                  <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
+                    <span className="px-2.5 py-0.5 rounded-full glass-pill text-primary font-label-caps text-[10px] uppercase font-bold border border-primary/30">
                       {event.category || event.eventType?.toUpperCase()}
                     </span>
-                    <span className="font-data-mono text-xs text-on-surface-variant">
+                    <span className="px-2.5 py-0.5 rounded-full glass-pill font-data-mono text-[10px] text-tertiary font-bold border border-tertiary/30">
                       {stats.readinessStatus || 'Monitored'}
                     </span>
                   </div>
+                </div>
 
+                {/* Event Details */}
+                <div className="p-space-lg flex flex-col gap-space-xs border-b border-white/[0.06]">
                   <h3 className="font-headline-sm text-xl font-bold text-on-surface group-hover:text-primary transition-colors">
                     {event.name}
                   </h3>
@@ -165,7 +190,7 @@ export default function Events() {
                   {/* Readiness Meter Progress Bar */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-label-caps uppercase text-on-surface-variant">
+                      <span className="font-label-caps uppercase text-on-surface-variant font-bold">
                         Parking Readiness Meter
                       </span>
                       <span className="font-data-mono font-bold text-primary">{coverage}%</span>
@@ -185,7 +210,7 @@ export default function Events() {
                   </div>
 
                   {/* Hybrid Demand Estimator Breakdown Box */}
-                  <div className="p-space-sm rounded-xl bg-surface-container border border-outline-variant/30 flex flex-col gap-2">
+                  <div className="p-space-sm rounded-xl glass-panel border border-white/[0.06] flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                       <span className="font-label-caps text-[10px] uppercase text-primary font-bold">
                         Hybrid Demand Estimator (Stage A)
@@ -224,12 +249,12 @@ export default function Events() {
                 </div>
 
                 {/* Card Action Row */}
-                <div className="p-space-md border-t border-outline-variant/30 bg-surface-container-lowest/60 flex items-center justify-between gap-space-sm">
+                <div className="p-space-md border-t border-white/[0.06] bg-surface-container-lowest/40 flex items-center justify-between gap-space-sm">
                   <button
                     type="button"
                     disabled={isActivating}
                     onClick={() => handleActivateEvent(event.id)}
-                    className="flex-1 py-2 px-3 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm"
+                    className="flex-1 py-2 px-3 rounded-xl bg-primary-container hover:bg-primary text-on-primary font-label-md text-xs font-semibold flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-[16px]">bolt</span>
                     <span>{isActivating ? 'Activating Engine...' : 'Activate Supply Engine'}</span>
@@ -237,7 +262,7 @@ export default function Events() {
 
                   <Link
                     to={`/explore?hub=${event.id}`}
-                    className="py-2 px-3 rounded-xl bg-surface-container hover:bg-surface-high text-on-surface font-label-md text-xs font-semibold transition-colors"
+                    className="py-2 px-3 rounded-xl glass-panel hover:bg-surface-high text-on-surface font-label-md text-xs font-semibold transition-colors border border-white/[0.08]"
                   >
                     View Bays
                   </Link>

@@ -143,7 +143,7 @@ export default function BookingCheckout() {
           {/* LEFT COLUMN: 60% (7 Cols) */}
           <div className="lg:col-span-7 flex flex-col gap-space-lg min-w-0">
             {/* Header Banner Section */}
-            <div className="flex flex-col gap-space-xs bg-surface-container-low p-space-lg rounded-xl shadow-md border border-outline-variant/30">
+            <div className="flex flex-col gap-space-xs glass-panel p-space-lg rounded-2xl shadow-xl border border-white/[0.08]">
               <div className="flex flex-wrap items-start justify-between gap-space-md">
                 <div>
                   <div className="inline-flex items-center gap-2 text-primary font-label-caps text-label-caps tracking-widest uppercase mb-1 font-bold">
@@ -159,7 +159,7 @@ export default function BookingCheckout() {
                   </p>
                 </div>
                 <div className="flex flex-col items-end shrink-0">
-                  <div className="flex items-center gap-1.5 bg-surface-container-highest px-3 py-1.5 rounded-lg">
+                  <div className="flex items-center gap-1.5 glass-panel px-3 py-1.5 rounded-xl border border-white/[0.08]">
                     <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
                     <span className="font-headline-sm text-headline-sm text-on-surface leading-none font-bold">4.9</span>
                     <span className="font-body-sm text-body-sm text-on-surface-variant">(1,420 reviews)</span>
@@ -172,17 +172,16 @@ export default function BookingCheckout() {
             </div>
 
             {/* 3D Spatial Deck Visualizer & Slot Matrix */}
-            <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-xl flex flex-col border border-outline-variant/30">
+            <div className="glass-panel rounded-2xl overflow-hidden shadow-xl flex flex-col border border-white/[0.08]">
               {/* Viewport Visual Context Image & WebGL Toggle */}
               <div className="relative w-full h-64 md:h-72 bg-surface-container-lowest overflow-hidden">
                 {viewMode === 'blueprint' ? (
-                  <div
-                    className="relative w-full h-full bg-cover bg-center"
-                    style={{
-                      backgroundImage:
-                        "url('/assets/3d_deck.png'), url('https://lh3.googleusercontent.com/aida-public/AB6AXuBb2nHzFS6H7Fd5N350jsKZdNrc5Rdeb6-KzzvzM8xcM1cfDkk-8Ay0RZJ2twVBDXPN7htgekYABZGts7HG5Yq7NYg-1Gf3qUtQyzZhsEqhpwTwLmJLuGq8ZXvt4BUdlY-zYFA7TuM2yzfaNbT86zbafT7VaRX0Hyd1oJYpe6cXf6dbSmiEq5_L2SbZyKRQE9SeAVVEE4I4n-TzG7l9eTvGVO7ZBX8493bL4Lpq_q5Pm0JUU3UxJwalEQ')"
-                    }}
-                  >
+                  <div className="relative w-full h-full">
+                    <img
+                      src="/assets/3d_deck.png"
+                      alt="Subterranean 3D architectural deck layout and slot positioning"
+                      className="w-full h-full object-cover"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/60 to-transparent"></div>
                   </div>
                 ) : (
@@ -192,17 +191,17 @@ export default function BookingCheckout() {
                 {/* Floating Deck HUD Badges & Mode Switcher */}
                 <div className="absolute top-space-md left-space-md right-space-md flex flex-wrap items-center justify-between gap-2 z-10">
                   <div className="flex flex-wrap gap-2">
-                    <div className="px-space-sm py-1 rounded bg-surface-container-lowest/90 backdrop-blur-md text-on-surface font-data-mono text-xs flex items-center gap-1.5 shadow-sm font-bold">
+                    <div className="px-space-sm py-1 rounded-full glass-pill text-on-surface font-data-mono text-xs flex items-center gap-1.5 shadow-sm font-bold border border-white/[0.08]">
                       <span className="material-symbols-outlined text-tertiary text-[14px]">sensors</span>
                       CAD Sync: 80ms Ultra-Wideband
                     </div>
-                    <div className="px-space-sm py-1 rounded bg-surface-container-lowest/90 backdrop-blur-md text-primary font-data-mono text-xs shadow-sm font-bold">
+                    <div className="px-space-sm py-1 rounded-full glass-pill text-primary font-data-mono text-xs shadow-sm font-bold border border-primary/30">
                       Ramp Clearance: 2.80m
                     </div>
                   </div>
 
                   {/* Blueprint vs 3D WebGL Switcher */}
-                  <div className="flex items-center gap-1 p-1 rounded-full bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40">
+                  <div className="flex items-center gap-1 p-1 rounded-full glass-pill border border-white/[0.08]">
                     <button
                       type="button"
                       onClick={() => setViewMode('blueprint')}
@@ -231,16 +230,16 @@ export default function BookingCheckout() {
 
                 <div className="absolute bottom-space-md left-space-md right-space-md flex items-center justify-between pointer-events-none z-10">
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 text-xs text-on-surface bg-surface-container-high/90 px-2.5 py-1 rounded-full backdrop-blur-sm">
+                    <div className="flex items-center gap-1.5 text-xs text-on-surface glass-pill px-2.5 py-1 rounded-full border border-white/[0.08]">
                       <span className="w-2 h-2 rounded-full bg-primary animate-ping"></span>
                       Bay {selectedBay} Selected
                     </div>
-                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-on-surface-variant bg-surface-container/90 px-2.5 py-1 rounded-full backdrop-blur-sm">
+                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-on-surface-variant glass-pill px-2.5 py-1 rounded-full border border-white/[0.08]">
                       <span className="w-2 h-2 rounded-full bg-tertiary"></span>
                       60kW DC Ready
                     </div>
                   </div>
-                  <span className="font-data-mono text-[11px] text-on-surface-variant bg-surface-container-lowest/80 px-2 py-0.5 rounded">
+                  <span className="font-data-mono text-[11px] text-on-surface-variant glass-pill px-2 py-0.5 rounded border border-white/[0.08]">
                     ELEVATION +11.20M
                   </span>
                 </div>
@@ -366,7 +365,7 @@ export default function BookingCheckout() {
                 </div>
 
                 {/* Deck Telemetry Status Bar */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm p-space-md rounded-lg bg-surface-container-low text-on-surface-variant">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm p-space-md rounded-xl glass-panel text-on-surface-variant border border-white/[0.06]">
                   <div className="flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-[18px]">height</span>
                     <div>
@@ -398,8 +397,8 @@ export default function BookingCheckout() {
                 Deck Infrastructure &amp; Security
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
-                <div className="p-space-md rounded-xl bg-surface-container-low shadow-sm flex items-start gap-space-sm border border-outline-variant/30">
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+                <div className="p-space-md rounded-2xl glass-panel shadow-sm flex items-start gap-space-sm border border-white/[0.08]">
+                  <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shrink-0 border border-white/[0.06]">
                     <span className="material-symbols-outlined text-[22px]">auto_read_play</span>
                   </div>
                   <div>
@@ -410,8 +409,8 @@ export default function BookingCheckout() {
                   </div>
                 </div>
 
-                <div className="p-space-md rounded-xl bg-surface-container-low shadow-sm flex items-start gap-space-sm border border-outline-variant/30">
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary shrink-0">
+                <div className="p-space-md rounded-2xl glass-panel shadow-sm flex items-start gap-space-sm border border-white/[0.08]">
+                  <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-tertiary shrink-0 border border-white/[0.06]">
                     <span className="material-symbols-outlined text-[22px]">bolt</span>
                   </div>
                   <div>
@@ -422,8 +421,8 @@ export default function BookingCheckout() {
                   </div>
                 </div>
 
-                <div className="p-space-md rounded-xl bg-surface-container-low shadow-sm flex items-start gap-space-sm border border-outline-variant/30">
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+                <div className="p-space-md rounded-2xl glass-panel shadow-sm flex items-start gap-space-sm border border-white/[0.08]">
+                  <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary shrink-0 border border-white/[0.06]">
                     <span className="material-symbols-outlined text-[22px]">videocam</span>
                   </div>
                   <div>
@@ -434,8 +433,8 @@ export default function BookingCheckout() {
                   </div>
                 </div>
 
-                <div className="p-space-md rounded-xl bg-surface-container-low shadow-sm flex items-start gap-space-sm border border-outline-variant/30">
-                  <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary shrink-0">
+                <div className="p-space-md rounded-2xl glass-panel shadow-sm flex items-start gap-space-sm border border-white/[0.08]">
+                  <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-secondary shrink-0 border border-white/[0.06]">
                     <span className="material-symbols-outlined text-[22px]">ac_unit</span>
                   </div>
                   <div>
@@ -449,7 +448,7 @@ export default function BookingCheckout() {
             </div>
 
             {/* Driver Intelligence & Verified Tips */}
-            <div className="p-space-lg rounded-xl bg-surface-container-low flex flex-col gap-space-md shadow-sm border border-outline-variant/30">
+            <div className="p-space-lg rounded-2xl glass-panel flex flex-col gap-space-md shadow-sm border border-white/[0.08]">
               <div className="flex items-center justify-between">
                 <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
                   Driver Intelligence &amp; Verified Tips
@@ -457,7 +456,7 @@ export default function BookingCheckout() {
                 <span className="font-label-caps text-label-caps text-primary uppercase font-bold">Indore EV Syndicate</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-                <div className="p-space-md rounded-lg bg-surface-container flex flex-col gap-space-xs">
+                <div className="p-space-md rounded-xl glass-panel flex flex-col gap-space-xs border border-white/[0.05]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-xs">V</div>
@@ -469,7 +468,7 @@ export default function BookingCheckout() {
                     "Bay A-12 is the widest slot in Section A. Easiest turnaround radius for long sedans like the Taycan or EQS. Direct elevator to PVR Lux cinema."
                   </p>
                 </div>
-                <div className="p-space-md rounded-lg bg-surface-container flex flex-col gap-space-xs">
+                <div className="p-space-md rounded-xl glass-panel flex flex-col gap-space-xs border border-white/[0.05]">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-tertiary text-on-tertiary flex items-center justify-center font-bold text-xs">P</div>
@@ -487,11 +486,11 @@ export default function BookingCheckout() {
 
           {/* RIGHT COLUMN: 40% (5 Cols) - STICKY RESERVATION DRAWER */}
           <div className="lg:col-span-5 w-full sticky top-24">
-            <div className="w-full bg-surface-container-low rounded-xl p-space-lg shadow-2xl flex flex-col gap-space-md relative overflow-hidden border border-outline-variant/40">
+            <div className="w-full glass-panel-elevated rounded-3xl p-space-lg shadow-2xl flex flex-col gap-space-md relative overflow-hidden border border-primary/30">
               <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
 
               {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/30">
+              <div className="flex items-center justify-between pb-space-sm border-b border-white/[0.08]">
                 <div className="flex flex-col">
                   <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary font-bold">
                     Configured Slot
@@ -505,20 +504,19 @@ export default function BookingCheckout() {
                     </span>
                   </div>
                 </div>
-                <div className="px-space-sm py-1 rounded bg-tertiary-container/15 text-tertiary font-label-caps text-[10px] uppercase font-bold flex items-center gap-1.5">
+                <div className="px-space-sm py-1 rounded-full glass-pill text-tertiary font-label-caps text-[10px] uppercase font-bold flex items-center gap-1.5 border border-tertiary/30">
                   <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
                   Live Reservation
                 </div>
               </div>
 
-              {/* Luxury Car Image Preview */}
-              <div
-                className="relative w-full h-32 rounded-lg overflow-hidden bg-cover bg-center shadow-inner"
-                style={{
-                  backgroundImage:
-                    "url('/assets/hero_car.png'), url('https://lh3.googleusercontent.com/aida-public/AB6AXuABNgVeeV9yZ5kmVhaX1DuBdFxJNmPc1qmToM9Bnu0ts1CNgeZmuIvyISJERrkvFdx0EbwSTGjNjksBU7RYz42yE4kvoM2V49USaTrRYMePJ6F8-m5hhUaxvU0sGksydYFs-EbLPSIJuI2qwBQOFAFuFPdtwA9ALS3kgMkcAa0ZYiW3sgupJgdvuKVhkBy7eJybn5jLRADu0xhO9SpkNs1wjhIP6-xXdRZujXVnLKjsWwMN7H891LmUkQ')"
-                }}
-              >
+              {/* Luxury Car Image Preview with Alt Text */}
+              <div className="relative w-full h-32 rounded-xl overflow-hidden shadow-inner border border-white/[0.08]">
+                <img
+                  src="/assets/hero_car.png"
+                  alt="Porsche Taycan electric sedan parked in reserved intelligent charging bay"
+                  className="w-full h-full object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-r from-surface-container-lowest/90 via-surface-container-lowest/40 to-transparent flex items-center p-space-md">
                   <div className="max-w-[180px]">
                     <span className="font-label-caps text-[9px] uppercase text-primary font-bold tracking-wider">

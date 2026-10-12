@@ -113,7 +113,9 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
       tags: ['ANPR Contactless', '60kW CCS2 EV', 'Valet Option'],
       syncText: 'Sensor Sync 12s ago',
       features: ['ev', 'cctv', 'covered', 'valet'],
-      spaceType: 'basement_garage'
+      spaceType: 'basement_garage',
+      image: '/assets/hub_citadel.jpg',
+      imageAlt: 'Phoenix Citadel Grand Deck modern architectural indoor parking garage with illuminated EV bays'
     },
     {
       id: 'space_brilliant_01',
@@ -133,7 +135,9 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
       tags: ['Covered B2', 'Heavy EV Hub'],
       syncText: 'Sensor Sync 18s ago',
       features: ['ev', 'cctv', 'covered'],
-      spaceType: 'basement_garage'
+      spaceType: 'basement_garage',
+      image: '/assets/hub_brilliant.jpg',
+      imageAlt: 'Brilliant Convention Centre premium subterranean parking garage in Scheme 78 Vijay Nagar'
     },
     {
       id: 'space_dukan_01',
@@ -153,7 +157,9 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
       tags: ['Automated Lift', 'Gourmet Ingress'],
       syncText: 'Sensor Sync 4s ago',
       features: ['cctv', 'valet'],
-      spaceType: 'multi_story'
+      spaceType: 'multi_story',
+      image: '/assets/hub_chappan.jpg',
+      imageAlt: '56 Dukan Culinary Multi-Deck automated parking facility in New Palasia Indore'
     },
     {
       id: 'space_holkar_01',
@@ -174,7 +180,9 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
       tags: ['VIP Corridor', 'Rapid Outflow'],
       syncText: 'Sensor Sync 8s ago',
       features: ['event', 'cctv'],
-      spaceType: 'open_ground'
+      spaceType: 'open_ground',
+      image: '/assets/hub_holkar.jpg',
+      imageAlt: 'Holkar Stadium VIP and General Ring stadium parking grounds on Race Course Road Indore'
     }
   ];
 
@@ -244,7 +252,7 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
   return (
     <div className="w-full pt-16 md:pt-20 bg-surface min-h-screen text-on-surface">
       {/* 1. TOP TELEMETRY & CONTROL RIBBON */}
-      <section className="w-full bg-surface-container-lowest px-margin-mobile md:px-margin py-space-sm shadow-xl border-b border-outline-variant/30 sticky top-16 md:top-20 z-40">
+      <section className="w-full glass-panel px-margin-mobile md:px-margin py-space-sm shadow-xl border-b border-white/[0.08] sticky top-16 md:top-20 z-40">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md">
           {/* Segmented Mode & Search Crosshairs */}
           <div className="flex flex-wrap md:flex-nowrap items-center gap-space-sm flex-1">
@@ -440,12 +448,27 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
                 <article
                   key={hub.hubKey}
                   onClick={() => setSelectedHub(hub.hubKey)}
-                  className={`hub-card relative flex flex-col p-space-md rounded-xl bg-surface-container-low border-2 transition-all transform hover:-translate-y-0.5 group cursor-pointer ${
+                  className={`hub-card relative flex flex-col p-space-md rounded-2xl glass-panel border-2 transition-all transform hover:-translate-y-0.5 group cursor-pointer ${
                     isSelected
-                      ? 'border-primary shadow-[0_0_24px_rgba(216,166,74,0.18)]'
-                      : 'border-transparent hover:border-outline-variant/60'
+                      ? 'border-primary shadow-[0_0_24px_rgba(216,166,74,0.25)] glass-panel-elevated'
+                      : 'border-white/[0.08] hover:border-primary/40'
                   }`}
                 >
+                  {/* Venue Photographic Preview Image with Alt Text */}
+                  <div className="relative w-full h-36 rounded-xl overflow-hidden mb-3 bg-surface-container-high border border-white/[0.06]">
+                    <img
+                      src={hub.image}
+                      alt={hub.imageAlt}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest/90 via-transparent to-transparent"></div>
+                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5">
+                      <span className="px-2 py-0.5 rounded-full glass-pill text-[10px] font-data-mono font-bold text-primary border border-primary/30">
+                        {hub.distance}
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="flex items-start justify-between gap-space-sm mb-2">
                     <div className="flex flex-col">
                       <div className="flex items-center gap-2">
@@ -453,12 +476,12 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
                           {hub.name}
                         </span>
                         {isSelected && (
-                          <span className="badge-status px-1.5 py-0.5 rounded bg-primary/20 text-primary font-label-caps text-[10px] tracking-wider uppercase border border-primary/40 font-semibold">
+                          <span className="badge-status px-2 py-0.5 rounded-full glass-pill text-primary font-label-caps text-[10px] tracking-wider uppercase border border-primary/40 font-semibold">
                             Selected Ingress
                           </span>
                         )}
                         {hub.surgeBadge && (
-                          <span className="px-1.5 py-0.5 rounded bg-error/20 text-error font-label-caps text-[10px] uppercase border border-error/40 font-bold">
+                          <span className="px-2 py-0.5 rounded-full bg-error/20 text-error font-label-caps text-[10px] uppercase border border-error/40 font-bold">
                             {hub.surgeBadge}
                           </span>
                         )}
@@ -480,7 +503,7 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 my-2 py-2 px-3 rounded-lg bg-surface-container">
+                  <div className="grid grid-cols-3 gap-2 my-2 py-2 px-3 rounded-xl glass-panel border border-white/[0.05]">
                     <div className="flex flex-col">
                       <span className="font-label-caps text-[10px] text-on-surface-variant uppercase">Proximity</span>
                       <span className="font-data-mono text-body-md text-on-surface font-semibold">{hub.distance}</span>
@@ -502,7 +525,7 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
                       {hub.tags.map(t => (
                         <span
                           key={t}
-                          className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-caps text-[10px] uppercase tracking-wider"
+                          className="px-2.5 py-0.5 rounded-full glass-pill text-on-surface font-label-caps text-[10px] uppercase tracking-wider border border-white/[0.08]"
                         >
                           {t}
                         </span>
@@ -533,7 +556,7 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
                         e.stopPropagation();
                         toggleBookmark(hub.hubKey);
                       }}
-                      className={`bookmark-btn p-2 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer ${
+                      className={`bookmark-btn p-2 rounded-full glass-pill hover:bg-surface-container-high transition-colors cursor-pointer ${
                         isBookmarked ? 'text-primary' : 'text-on-surface-variant hover:text-primary'
                       }`}
                     >
@@ -556,10 +579,10 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
 
       {/* 3. 3D DECK ALLOCATOR MODAL */}
       {selectedModalSpace && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl">
-          <div className="w-full max-w-4xl bg-surface-container-lowest border border-outline-variant/60 rounded-2xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-2xl">
+          <div className="w-full max-w-4xl glass-panel-elevated border border-primary/30 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
             {/* Header */}
-            <div className="p-space-md border-b border-outline-variant/40 flex items-center justify-between bg-surface-container-low">
+            <div className="p-space-md border-b border-white/[0.08] flex items-center justify-between glass-panel">
               <div className="flex items-center gap-space-sm">
                 <span className="material-symbols-outlined text-primary text-[24px]">view_in_ar</span>
                 <div>
@@ -577,7 +600,7 @@ export default function Explore({ vehicleMode = 'car', setVehicleMode }) {
                   setSelectedModalSpace(null);
                   setLockError('');
                 }}
-                className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-on-surface hover:text-primary transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full glass-pill flex items-center justify-center text-on-surface hover:text-primary transition-colors cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>

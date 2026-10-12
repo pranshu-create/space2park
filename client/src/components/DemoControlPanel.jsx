@@ -81,7 +81,7 @@ export default function DemoControlPanel({
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          className="px-3.5 py-2 rounded-full bg-surface-container-high/95 border border-primary text-primary text-xs font-label-caps uppercase tracking-wider flex items-center gap-2 shadow-[0_0_24px_rgba(216,166,74,0.3)] hover:scale-105 transition-all"
+          className="px-3.5 py-2 rounded-full glass-panel border border-primary text-primary text-xs font-label-caps uppercase tracking-wider flex items-center gap-2 shadow-[0_0_24px_rgba(216,166,74,0.3)] hover:scale-105 transition-all"
         >
           <span className="w-2 h-2 rounded-full bg-primary animate-ping"></span>
           <span>Judge Demo Controls</span>
@@ -89,7 +89,7 @@ export default function DemoControlPanel({
         </button>
       ) : (
         /* Expanded HUD Panel */
-        <div className="w-80 rounded-2xl bg-surface-container-highest/95 border border-primary/40 backdrop-blur-2xl p-space-md shadow-2xl flex flex-col gap-space-sm text-on-surface">
+        <div className="w-80 rounded-2xl glass-panel-elevated border border-primary/40 p-space-md shadow-2xl flex flex-col gap-space-sm text-on-surface">
           <div className="flex items-center justify-between pb-1 border-b border-outline-variant/40">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
