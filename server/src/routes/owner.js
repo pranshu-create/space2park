@@ -72,6 +72,7 @@ router.post('/scan', authenticateToken, requireRole(['owner', 'admin']), (req, r
 
   res.json({
     valid: true,
+    status: checkStatus,
     checkStatus,
     bookingId,
     spaceId,
@@ -81,6 +82,12 @@ router.post('/scan', authenticateToken, requireRole(['owner', 'admin']), (req, r
     verifiedAt: new Date().toISOString(),
     message: checkStatus === 'checked_in' ? 'Check-in successful. Gate barrier unlocked.' : 'Check-out successful. Slot released.'
   });
+});
+
+// Alias for /scan-checkin
+router.post('/scan-checkin', authenticateToken, requireRole(['owner', 'admin']), (req, res, next) => {
+  req.url = '/scan';
+  router.handle(req, res, next);
 });
 
 export default router;

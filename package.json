@@ -4,6 +4,7 @@
   "description": "SPACE2PARK - Intelligent AI-Powered Event-Based Smart Parking Network",
   "scripts": {
     "dev": "node scripts/dev.js",
+    "build": "npm run build --prefix client",
     "seed": "cd server && node src/seed/seed.js",
     "test": "cd server && npm test"
   }

@@ -99,12 +99,16 @@ io.on('connection', socket => {
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-  console.log(`\n======================================================`);
-  console.log(`🌌 SPACE2PARK Backend Server Active on port ${PORT}`);
-  console.log(`📡 Real-Time Telemetry via Socket.io Enabled`);
-  console.log(`🌆 City Edition: Indore, MP (7 Venues, 315+ Spaces)`);
-  console.log(`======================================================\n`);
-});
+const isMainModule = process.argv[1] && (process.argv[1].endsWith('index.js') || process.argv[1].endsWith('src\\index.js') || process.argv[1].endsWith('src/index.js'));
+
+if (isMainModule) {
+  server.listen(PORT, () => {
+    console.log(`\n======================================================`);
+    console.log(`🌌 SPACE2PARK Backend Server Active on port ${PORT}`);
+    console.log(`📡 Real-Time Telemetry via Socket.io Enabled`);
+    console.log(`🌆 City Edition: Indore, MP (7 Venues, 315+ Spaces)`);
+    console.log(`======================================================\n`);
+  });
+}
 
 export { app, server, io };
