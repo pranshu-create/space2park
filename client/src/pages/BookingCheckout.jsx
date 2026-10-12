@@ -11,52 +11,48 @@ export default function BookingCheckout() {
 
   const space = location.state?.space;
   const lockData = location.state?.lockData;
-  const slotCode = location.state?.slotCode || 'A-12';
+  const initialSlot = location.state?.slotCode || 'A-12';
   const vehicleMode = location.state?.vehicleMode || 'car';
 
-  const [timeLeftSeconds, setTimeLeftSeconds] = useState(300); // 5 minutes default
-  const [paymentMethod, setPaymentMethod] = useState('upi');
-  const [upiApp, setUpiApp] = useState('gpay');
-  const [vehicleNumber, setVehicleNumber] = useState('MP 09 Z 4812');
-  const [demoOutcome, setDemoOutcome] = useState('success'); // 'success' | 'failure' | 'timeout'
+  const [selectedBay, setSelectedBay] = useState(initialSlot);
+  const [hourlyRate, setHourlyRate] = useState(space?.pricePerHour || 50);
+  const [durationHours, setDurationHours] = useState(2);
+  const [vehicleNumber, setVehicleNumber] = useState('MP 09 WZ 4821');
+  const [payMethod, setPayMethod] = useState('upi');
+  const [demoOutcome, setDemoOutcome] = useState('success');
   const [processing, setProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [lockExpired, setLockExpired] = useState(false);
 
-  // Synchronize lock timer with expiresAt
+  // Lock countdown timer
+  const [timeLeftSeconds, setTimeLeftSeconds] = useState(300);
+
   useEffect(() => {
     if (!lockData?.expiresAt) return;
     const expiresTimestamp = new Date(lockData.expiresAt).getTime();
-
     const interval = setInterval(() => {
       const remainingMs = expiresTimestamp - Date.now();
       const remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
       setTimeLeftSeconds(remainingSec);
-
       if (remainingSec <= 0) {
         clearInterval(interval);
-        setLockExpired(true);
         setErrorMessage('Atomic slot lock has expired. Slot returned to public pool.');
       }
     }, 1000);
-
     return () => clearInterval(interval);
   }, [lockData]);
 
-  const baseRate = vehicleMode === 'car' ? (space?.pricePerHour || 50) : Math.round((space?.pricePerHour || 50) * 0.4);
-  const hours = 2;
-  const subtotal = baseRate * hours;
-  const platformFee = 5;
-  const gst = Math.round(subtotal * 0.18);
-  const totalAmount = subtotal + platformFee + gst;
+  const baseAmount = durationHours * hourlyRate;
+  const preconditioningFee = 20;
+  const escrowFee = 10;
+  const totalAmount = baseAmount + preconditioningFee + escrowFee;
 
-  const handlePayAndConfirm = async e => {
-    e.preventDefault();
-    if (lockExpired) {
-      setErrorMessage('Slot lock has expired. Please return to map and re-select.');
-      return;
-    }
+  const handleSelectBay = (bay, rate) => {
+    setSelectedBay(bay);
+    if (rate) setHourlyRate(rate);
+  };
 
+  const handleConfirmReservation = async e => {
+    if (e) e.preventDefault();
     setProcessing(true);
     setErrorMessage('');
 
@@ -68,37 +64,27 @@ export default function BookingCheckout() {
           Authorization: `Bearer ${token || localStorage.getItem('s2p_token')}`
         },
         body: JSON.stringify({
-          spaceId: space?.id || spaceId,
-          slotCode,
+          spaceId: space?.id || spaceId || 'space_citadel_01',
+          slotCode: selectedBay,
           lockToken: lockData?.lockToken || `token_${Date.now()}`,
           vehicleNumber,
           vehicleType: vehicleMode,
-          hours,
-          demoOutcome // simulated payment outcome for SIH judges
+          hours: durationHours,
+          demoOutcome
         })
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Payment and booking failed.');
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Payment and booking failed.');
-      }
-
-      // If demoOutcome is failure or timeout
       if (data.status === 'failed' || data.status === 'cancelled') {
         setErrorMessage(`Simulation outcome: ${data.message || 'Payment rejected'}. Lock automatically released.`);
         setProcessing(false);
         return;
       }
 
-      // Success! Celebrate with confetti
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
-      });
+      confetti({ particleCount: 90, spread: 75, origin: { y: 0.6 } });
 
-      // Navigate to my bookings pass
       setTimeout(() => {
         navigate('/my-bookings', { state: { newBooking: data.booking } });
       }, 900);
@@ -109,329 +95,568 @@ export default function BookingCheckout() {
     }
   };
 
-  const formatTimer = secs => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
-
-  if (!space) {
-    return (
-      <div className="w-full pt-28 pb-20 min-h-screen bg-surface flex flex-col items-center justify-center text-on-surface">
-        <div className="p-8 rounded-2xl bg-surface-container-low border border-outline-variant/40 text-center max-w-md">
-          <span className="material-symbols-outlined text-4xl text-primary mb-2">error</span>
-          <h2 className="text-xl font-bold font-headline-sm mb-2">No Active Slot Lock Session</h2>
-          <p className="text-sm text-on-surface-variant mb-6">
-            Please pick a parking bay from the Radar Map Explorer to begin an atomic reservation.
-          </p>
-          <Link
-            to="/explore"
-            className="px-6 py-2.5 rounded-full bg-primary-container text-on-primary font-bold text-sm inline-flex items-center gap-2"
-          >
-            <span>Explore Parking Grid</span>
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  const venueTitle = space?.name || 'Phoenix Citadel Grand Deck — Level 03';
+  const venueAddress = space?.address || 'Bypass Road, Sector A, Indore, MP • 0.8 km from your current GPS';
 
   return (
-    <div className="w-full pt-24 pb-20 min-h-screen bg-surface text-on-surface px-margin-mobile md:px-margin max-w-5xl mx-auto">
-      {/* 1. LOCK COUNTDOWN BANNER (Judge-Wow Feature) */}
-      <div
-        className={`w-full p-space-md rounded-2xl border mb-space-lg flex flex-col sm:flex-row items-center justify-between gap-space-sm backdrop-blur-xl ${
-          timeLeftSeconds < 60
-            ? 'bg-error-container/20 border-error text-error animate-pulse'
-            : 'bg-surface-container-low border-primary/40'
-        }`}
-      >
-        <div className="flex items-center gap-space-sm">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-            <span className="material-symbols-outlined text-[22px]">lock_clock</span>
+    <div className="w-full pt-16 md:pt-20 bg-surface min-h-screen text-on-surface">
+      <div className="w-full px-margin-mobile md:px-margin py-space-lg max-w-7xl mx-auto">
+        {/* Top System Sub-Bar / Breadcrumbs & Status */}
+        <div className="flex flex-wrap items-center justify-between gap-space-sm mb-space-lg">
+          <div className="flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
+            <Link to="/explore" className="hover:text-primary transition-colors flex items-center gap-1">
+              <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+              Find Parking
+            </Link>
+            <span>/</span>
+            <span className="text-on-surface-variant">Phoenix Citadel</span>
+            <span>/</span>
+            <span className="text-primary font-semibold">Level 03 — Section A &amp; B</span>
           </div>
-          <div>
+          <div className="flex items-center gap-space-md">
+            <div className="flex items-center gap-2 px-space-sm py-1 rounded-full bg-surface-container-high">
+              <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+              <span className="font-data-mono text-xs text-on-surface font-bold">ANPR GATE #02 LIVE</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-1.5 px-space-sm py-1 rounded-full bg-surface-container text-on-surface-variant font-label-caps text-label-caps">
+              <span className="material-symbols-outlined text-primary text-[15px]">verified</span>
+              ISO 27001 &amp; PRIVACY COMPLIANT
+            </div>
+          </div>
+        </div>
+
+        {/* Lock Timer Warning if active */}
+        {timeLeftSeconds < 120 && (
+          <div className="mb-space-md p-space-sm rounded-xl bg-primary-container/20 border border-primary text-primary flex items-center justify-between text-xs font-data-mono">
             <div className="flex items-center gap-2">
-              <span className="font-label-caps text-label-caps uppercase text-primary font-bold">
-                Atomic Server Lock Active
-              </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-data-mono">
-                Bay {slotCode}
-              </span>
+              <span className="material-symbols-outlined text-[18px]">lock_clock</span>
+              <span>Server-Authoritative Lock Active for Bay {selectedBay}. Holding exclusively in Redis.</span>
             </div>
-            <p className="text-xs text-on-surface-variant">
-              Slot held exclusively in Redis. Other drivers see this slot locked in real time.
-            </p>
+            <span className="font-bold">{Math.floor(timeLeftSeconds / 60)}:{(timeLeftSeconds % 60).toString().padStart(2, '0')}</span>
           </div>
-        </div>
+        )}
 
-        <div className="flex items-center gap-2 bg-surface-container-lowest px-4 py-2 rounded-xl border border-outline-variant/40">
-          <span className="text-xs text-on-surface-variant font-label-caps uppercase">Time Left:</span>
-          <span className="font-data-mono text-xl font-bold text-primary tracking-wider">
-            {formatTimer(timeLeftSeconds)}
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-xl">
-        {/* Left Column: Checkout & Payment Details */}
-        <div className="lg:col-span-7 flex flex-col gap-space-lg">
-          <form onSubmit={handlePayAndConfirm} className="flex flex-col gap-space-lg">
-            {/* Vehicle Number & Category */}
-            <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-space-md">
-              <div className="flex items-center justify-between">
-                <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
-                  Vehicle Details
-                </span>
-                <span className="font-data-mono text-xs text-tertiary uppercase flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
-                  {vehicleMode === 'car' ? 'Car / SUV Bay' : 'Two-Wheeler Dock'}
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-label-caps uppercase text-on-surface-variant mb-1">
-                  Vehicle Registration Number (for ANPR & Barrier)
-                </label>
-                <input
-                  type="text"
-                  value={vehicleNumber}
-                  onChange={e => setVehicleNumber(e.target.value.toUpperCase())}
-                  required
-                  placeholder="e.g. MP 09 AB 1234"
-                  className="w-full px-4 py-3 rounded-xl bg-surface-container-lowest border border-outline-variant/50 text-on-surface font-data-mono font-bold tracking-widest text-lg focus:outline-none focus:border-primary uppercase"
-                />
+        {/* Main Workspace Split Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+          {/* LEFT COLUMN: 60% (7 Cols) */}
+          <div className="lg:col-span-7 flex flex-col gap-space-lg min-w-0">
+            {/* Header Banner Section */}
+            <div className="flex flex-col gap-space-xs bg-surface-container-low p-space-lg rounded-xl shadow-md border border-outline-variant/30">
+              <div className="flex flex-wrap items-start justify-between gap-space-md">
+                <div>
+                  <div className="inline-flex items-center gap-2 text-primary font-label-caps text-label-caps tracking-widest uppercase mb-1 font-bold">
+                    <span className="material-symbols-outlined text-[14px]">local_parking</span>
+                    Autonomous Tier-1 Hub
+                  </div>
+                  <h1 className="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold">
+                    {venueTitle}
+                  </h1>
+                  <p className="font-body-md text-body-md text-on-surface-variant mt-1 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[16px] text-tertiary">location_on</span>
+                    {venueAddress}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end shrink-0">
+                  <div className="flex items-center gap-1.5 bg-surface-container-highest px-3 py-1.5 rounded-lg">
+                    <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+                    <span className="font-headline-sm text-headline-sm text-on-surface leading-none font-bold">4.9</span>
+                    <span className="font-body-sm text-body-sm text-on-surface-variant">(1,420 reviews)</span>
+                  </div>
+                  <span className="font-label-caps text-[10px] uppercase text-tertiary mt-1 font-bold">
+                    Direct Mall Atrium Lift
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Payment Mode Selection */}
-            <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-space-md">
-              <span className="font-headline-sm text-headline-sm font-semibold text-on-surface">
-                Select Payment Method
-              </span>
+            {/* 3D Spatial Deck Visualizer & Slot Matrix */}
+            <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-xl flex flex-col border border-outline-variant/30">
+              {/* Viewport Visual Context Image */}
+              <div
+                className="relative w-full h-64 md:h-72 bg-cover bg-center"
+                style={{
+                  backgroundImage:
+                    "url('/assets/3d_deck.png'), url('https://lh3.googleusercontent.com/aida-public/AB6AXuBb2nHzFS6H7Fd5N350jsKZdNrc5Rdeb6-KzzvzM8xcM1cfDkk-8Ay0RZJ2twVBDXPN7htgekYABZGts7HG5Yq7NYg-1Gf3qUtQyzZhsEqhpwTwLmJLuGq8ZXvt4BUdlY-zYFA7TuM2yzfaNbT86zbafT7VaRX0Hyd1oJYpe6cXf6dbSmiEq5_L2SbZyKRQE9SeAVVEE4I4n-TzG7l9eTvGVO7ZBX8493bL4Lpq_q5Pm0JUU3UxJwalEQ')"
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/60 to-transparent"></div>
+                {/* Floating Deck HUD Badges */}
+                <div className="absolute top-space-md left-space-md flex flex-wrap gap-2">
+                  <div className="px-space-sm py-1 rounded bg-surface-container-lowest/90 backdrop-blur-md text-on-surface font-data-mono text-xs flex items-center gap-1.5 shadow-sm font-bold">
+                    <span className="material-symbols-outlined text-tertiary text-[14px]">sensors</span>
+                    CAD Sync: 80ms Ultra-Wideband
+                  </div>
+                  <div className="px-space-sm py-1 rounded bg-surface-container-lowest/90 backdrop-blur-md text-primary font-data-mono text-xs shadow-sm font-bold">
+                    Ramp Clearance: 2.80m
+                  </div>
+                </div>
 
-              {/* Tabs */}
-              <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-surface-container-lowest">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('upi')}
-                  className={`py-2 rounded-lg text-xs font-label-md font-semibold transition-all ${
-                    paymentMethod === 'upi'
-                      ? 'bg-primary-container text-on-primary shadow-sm'
-                      : 'text-on-surface-variant hover:text-on-surface'
-                  }`}
-                >
-                  ⚡ Instant UPI
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`py-2 rounded-lg text-xs font-label-md font-semibold transition-all ${
-                    paymentMethod === 'card'
-                      ? 'bg-primary-container text-on-primary shadow-sm'
-                      : 'text-on-surface-variant hover:text-on-surface'
-                  }`}
-                >
-                  💳 Card
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('wallet')}
-                  className={`py-2 rounded-lg text-xs font-label-md font-semibold transition-all ${
-                    paymentMethod === 'wallet'
-                      ? 'bg-primary-container text-on-primary shadow-sm'
-                      : 'text-on-surface-variant hover:text-on-surface'
-                  }`}
-                >
-                  🏦 NetBanking
-                </button>
+                <div className="absolute bottom-space-md left-space-md right-space-md flex items-center justify-between pointer-events-none">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 text-xs text-on-surface bg-surface-container-high/90 px-2.5 py-1 rounded-full backdrop-blur-sm">
+                      <span className="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+                      Bay {selectedBay} Selected
+                    </div>
+                    <div className="hidden sm:flex items-center gap-1.5 text-xs text-on-surface-variant bg-surface-container/90 px-2.5 py-1 rounded-full backdrop-blur-sm">
+                      <span className="w-2 h-2 rounded-full bg-tertiary"></span>
+                      60kW DC Ready
+                    </div>
+                  </div>
+                  <span className="font-data-mono text-[11px] text-on-surface-variant bg-surface-container-lowest/80 px-2 py-0.5 rounded">
+                    ELEVATION +11.20M
+                  </span>
+                </div>
               </div>
 
-              {/* UPI Options */}
-              {paymentMethod === 'upi' && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+              {/* Interactive Bay Matrix Canvas */}
+              <div className="p-space-lg flex flex-col gap-space-lg">
+                <div className="flex flex-wrap items-center justify-between gap-space-sm pb-space-sm border-b border-outline-variant/30">
+                  <div className="flex items-center gap-space-xs">
+                    <span className="font-label-caps text-label-caps tracking-widest text-on-surface-variant uppercase font-bold">
+                      Interactive Spatial Grid
+                    </span>
+                    <span className="text-outline-variant">•</span>
+                    <span className="font-body-sm text-body-sm text-secondary">Tap any empty bay to switch reservation</span>
+                  </div>
+                  {/* Legend */}
+                  <div className="flex items-center gap-space-md font-label-caps text-[10px] uppercase">
+                    <span className="flex items-center gap-1.5 text-on-surface-variant">
+                      <span className="w-2.5 h-2.5 rounded bg-surface-container-highest"></span> Occupied
+                    </span>
+                    <span className="flex items-center gap-1.5 text-tertiary">
+                      <span className="w-2.5 h-2.5 rounded bg-tertiary/40"></span> Available
+                    </span>
+                    <span className="flex items-center gap-1.5 text-primary font-bold">
+                      <span className="w-2.5 h-2.5 rounded bg-primary ring-2 ring-primary/40"></span> Selected
+                    </span>
+                  </div>
+                </div>
+
+                {/* ROW A: Premium SUV & EV Bays */}
+                <div className="flex flex-col gap-space-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-headline-sm text-xs font-semibold text-on-surface tracking-wider uppercase flex items-center gap-1.5 font-bold">
+                      <span className="material-symbols-outlined text-primary text-[16px]">ev_station</span>
+                      Row A — High-Capacity DC Fast Charge Bays (Up to 4.9m)
+                    </span>
+                    <span className="font-data-mono text-xs text-tertiary font-bold">2 / 8 Open</span>
+                  </div>
+
+                  <div className="grid grid-cols-4 sm:grid-cols-8 gap-2" id="slot-matrix-row-a">
+                    {[
+                      { slot: 'A-01', car: 'Taycan', occupied: true },
+                      { slot: 'A-02', car: 'Cybertruck', occupied: true },
+                      { slot: 'A-03', car: 'Nexon EV', occupied: true },
+                      { slot: 'A-04', spec: '60 kW', occupied: false, rate: 50 },
+                      { slot: 'A-05', spec: '60 kW', occupied: false, rate: 50 },
+                      { slot: 'A-06', car: 'Ioniq 5', occupied: true },
+                      { slot: 'A-07', car: 'BMW iX', occupied: true },
+                      { slot: 'A-12', spec: '60 kW', occupied: false, rate: 50 }
+                    ].map(bay => {
+                      const isSelected = selectedBay === bay.slot;
+                      if (bay.occupied) {
+                        return (
+                          <div
+                            key={bay.slot}
+                            className="flex flex-col items-center justify-center p-2 rounded-lg bg-surface-container-high text-on-secondary-container opacity-60 cursor-not-allowed"
+                          >
+                            <span className="font-data-mono text-xs font-bold">{bay.slot}</span>
+                            <span className="text-[9px] uppercase tracking-tighter mt-0.5">{bay.car}</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <button
+                          key={bay.slot}
+                          type="button"
+                          onClick={() => handleSelectBay(bay.slot, bay.rate)}
+                          className={`bay-tile group flex flex-col items-center justify-center p-2 rounded-lg transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-primary text-on-primary font-bold shadow-lg shadow-primary/20 scale-105'
+                              : 'bg-tertiary-container/15 hover:bg-tertiary-container/25 text-tertiary'
+                          }`}
+                        >
+                          <span className="font-data-mono text-xs font-bold">{bay.slot}</span>
+                          <span className="text-[9px] uppercase tracking-tighter mt-0.5 font-bold">
+                            {isSelected ? 'ACTIVE' : bay.spec}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ROW B: Two-Wheeler Racks */}
+                <div className="flex flex-col gap-space-xs pt-space-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-headline-sm text-xs font-semibold text-on-surface-variant tracking-wider uppercase flex items-center gap-1.5 font-bold">
+                      <span className="material-symbols-outlined text-secondary text-[16px]">two_wheeler</span>
+                      Row B — Two-Wheeler &amp; Battery Swap Locker Racks
+                    </span>
+                    <span className="font-data-mono text-xs text-on-surface-variant font-bold">9 / 12 Open</span>
+                  </div>
+
+                  <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                    {['B-01', 'B-02', 'B-03', 'B-04', 'B-05', 'B-06', 'B-07', 'B-08', 'B-09', 'B-10', 'B-11', 'B-12'].map(
+                      (b, i) => {
+                        const isOccupied = i === 0 || i === 4 || i === 9;
+                        const isSelected = selectedBay === b;
+                        if (isOccupied) {
+                          return (
+                            <div key={b} className="p-1.5 rounded bg-surface-container-high text-center text-on-secondary-container text-[10px] font-data-mono opacity-50">
+                              {b}
+                            </div>
+                          );
+                        }
+                        return (
+                          <button
+                            key={b}
+                            type="button"
+                            onClick={() => handleSelectBay(b, 20)}
+                            className={`p-1.5 rounded text-center transition-colors text-[10px] font-data-mono cursor-pointer ${
+                              isSelected
+                                ? 'bg-primary text-on-primary font-bold'
+                                : 'bg-surface-container text-on-surface-variant hover:bg-tertiary/20 hover:text-tertiary'
+                            }`}
+                          >
+                            {b}
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+                </div>
+
+                {/* Deck Telemetry Status Bar */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-space-sm p-space-md rounded-lg bg-surface-container-low text-on-surface-variant">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-[18px]">height</span>
+                    <div>
+                      <div className="font-label-caps text-[10px] uppercase tracking-wider text-secondary">Floor Clearance</div>
+                      <div className="font-data-mono text-sm text-on-surface font-bold">2.80m Max Height</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-tertiary text-[18px]">wifi_tethering</span>
+                    <div>
+                      <div className="font-label-caps text-[10px] uppercase tracking-wider text-secondary">Sensor Latency</div>
+                      <div className="font-data-mono text-sm text-on-surface font-bold">Ultrasonic 80ms</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-primary text-[18px]">elevator</span>
+                    <div>
+                      <div className="font-label-caps text-[10px] uppercase tracking-wider text-secondary">Pedestrian Transit</div>
+                      <div className="font-data-mono text-sm text-on-surface font-bold">West Core Lift #02</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Facility Specifications & Amenities Grid */}
+            <div className="flex flex-col gap-space-sm">
+              <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
+                Deck Infrastructure &amp; Security
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-space-md">
+                <div className="p-space-md rounded-xl bg-surface-container-low shadow-sm flex items-start gap-space-sm border border-outline-variant/30">
+                  <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">auto_read_play</span>
+                  </div>
+                  <div>
+                    <h3 className="font-label-md text-label-md text-on-surface font-semibold">ANPR Contactless Barrier</h3>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                      Seamless optical number plate matching opens barricade without lowering driver window.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-space-md rounded-xl bg-surface-container-low shadow-sm flex items-start gap-space-sm border border-outline-variant/30">
+                  <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-tertiary shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">bolt</span>
+                  </div>
+                  <div>
+                    <h3 className="font-label-md text-label-md text-on-surface font-semibold">EV High-Speed CCS2 60kW</h3>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                      Plug &amp; charge enabled at ₹14/unit with auto-billing directly through your Space2Park wallet.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-space-md rounded-xl bg-surface-container-low shadow-sm flex items-start gap-space-sm border border-outline-variant/30">
+                  <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">videocam</span>
+                  </div>
+                  <div>
+                    <h3 className="font-label-md text-label-md text-on-surface font-semibold">4K AI Continuous Sentry</h3>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                      Overhead 360° tamper surveillance with instant push alerts for door dings or proximity alerts.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-space-md rounded-xl bg-surface-container-low shadow-sm flex items-start gap-space-sm border border-outline-variant/30">
+                  <div className="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-secondary shrink-0">
+                    <span className="material-symbols-outlined text-[22px]">ac_unit</span>
+                  </div>
+                  <div>
+                    <h3 className="font-label-md text-label-md text-on-surface font-semibold">Subterranean Climate Control</h3>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                      Vapor-cooled 24°C ambient envelope prevents thermal runaway during intensive summer heatwaves.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Driver Intelligence & Verified Tips */}
+            <div className="p-space-lg rounded-xl bg-surface-container-low flex flex-col gap-space-md shadow-sm border border-outline-variant/30">
+              <div className="flex items-center justify-between">
+                <h2 className="font-headline-sm text-headline-sm text-on-surface font-bold">
+                  Driver Intelligence &amp; Verified Tips
+                </h2>
+                <span className="font-label-caps text-label-caps text-primary uppercase font-bold">Indore EV Syndicate</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+                <div className="p-space-md rounded-lg bg-surface-container flex flex-col gap-space-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-xs">V</div>
+                      <span className="font-label-md text-label-md text-on-surface font-medium">Vikramaditya S.</span>
+                    </div>
+                    <span className="font-data-mono text-xs text-secondary">Yesterday</span>
+                  </div>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    "Bay A-12 is the widest slot in Section A. Easiest turnaround radius for long sedans like the Taycan or EQS. Direct elevator to PVR Lux cinema."
+                  </p>
+                </div>
+                <div className="p-space-md rounded-lg bg-surface-container flex flex-col gap-space-xs">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-tertiary text-on-tertiary flex items-center justify-center font-bold text-xs">P</div>
+                      <span className="font-label-md text-label-md text-on-surface font-medium">Pooja M.</span>
+                    </div>
+                    <span className="font-data-mono text-xs text-secondary">3 days ago</span>
+                  </div>
+                  <p className="font-body-sm text-body-sm text-on-surface-variant">
+                    "Fastag autogate worked in under 1 second. The 60kW DC charger topped up my battery from 34% to 80% while I was shopping inside Citadel."
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: 40% (5 Cols) - STICKY RESERVATION DRAWER */}
+          <div className="lg:col-span-5 w-full sticky top-24">
+            <div className="w-full bg-surface-container-low rounded-xl p-space-lg shadow-2xl flex flex-col gap-space-md relative overflow-hidden border border-outline-variant/40">
+              <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+
+              {/* Drawer Header */}
+              <div className="flex items-center justify-between pb-space-sm border-b border-outline-variant/30">
+                <div className="flex flex-col">
+                  <span className="font-label-caps text-label-caps uppercase tracking-widest text-primary font-bold">
+                    Configured Slot
+                  </span>
+                  <div className="flex items-baseline gap-2">
+                    <h3 className="font-display text-[32px] leading-tight font-bold text-on-surface" id="selected-bay-title">
+                      Bay {selectedBay}
+                    </h3>
+                    <span className="font-data-mono text-xs text-secondary font-bold" id="selected-bay-sensor">
+                      (Sensor #904)
+                    </span>
+                  </div>
+                </div>
+                <div className="px-space-sm py-1 rounded bg-tertiary-container/15 text-tertiary font-label-caps text-[10px] uppercase font-bold flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+                  Live Reservation
+                </div>
+              </div>
+
+              {/* Luxury Car Image Preview */}
+              <div
+                className="relative w-full h-32 rounded-lg overflow-hidden bg-cover bg-center shadow-inner"
+                style={{
+                  backgroundImage:
+                    "url('/assets/hero_car.png'), url('https://lh3.googleusercontent.com/aida-public/AB6AXuABNgVeeV9yZ5kmVhaX1DuBdFxJNmPc1qmToM9Bnu0ts1CNgeZmuIvyISJERrkvFdx0EbwSTGjNjksBU7RYz42yE4kvoM2V49USaTrRYMePJ6F8-m5hhUaxvU0sGksydYFs-EbLPSIJuI2qwBQOFAFuFPdtwA9ALS3kgMkcAa0ZYiW3sgupJgdvuKVhkBy7eJybn5jLRADu0xhO9SpkNs1wjhIP6-xXdRZujXVnLKjsWwMN7H891LmUkQ')"
+                }}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-surface-container-lowest/90 via-surface-container-lowest/40 to-transparent flex items-center p-space-md">
+                  <div className="max-w-[180px]">
+                    <span className="font-label-caps text-[9px] uppercase text-primary font-bold tracking-wider">
+                      Assigned Specs
+                    </span>
+                    <p className="font-label-md text-xs text-on-surface font-semibold">
+                      Sedan • Air Susp Safe • 15m to Lift
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Vehicle Registration Input */}
+              <div className="flex flex-col gap-1.5">
+                <label className="font-label-caps text-label-caps text-on-surface-variant uppercase flex items-center justify-between font-bold">
+                  <span>Vehicle Registration (ANPR Sync)</span>
+                  <span className="text-tertiary font-normal lowercase text-[10px]">Auto-detected</span>
+                </label>
+                <div className="flex items-center gap-space-sm px-space-md py-2.5 rounded-lg bg-surface-container-highest">
+                  <span className="material-symbols-outlined text-primary text-[20px]">directions_car</span>
+                  <input
+                    className="bg-transparent font-data-mono text-sm text-on-surface focus:outline-none w-full tracking-wider font-semibold uppercase"
+                    type="text"
+                    value={vehicleNumber}
+                    onChange={e => setVehicleNumber(e.target.value.toUpperCase())}
+                  />
+                  <span className="font-label-caps text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded font-bold">
+                    Taycan EV
+                  </span>
+                </div>
+              </div>
+
+              {/* Duration Selector */}
+              <div className="flex flex-col gap-space-xs pt-space-xs">
+                <div className="flex items-center justify-between font-label-caps text-label-caps text-on-surface-variant uppercase font-bold">
+                  <span>Parking Duration</span>
+                  <span className="text-on-surface font-data-mono lowercase">Arrival: Today, 07:30 PM</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5 text-center">
                   {[
-                    { id: 'gpay', label: 'Google Pay', icon: 'payments' },
-                    { id: 'phonepe', label: 'PhonePe', icon: 'account_balance_wallet' },
-                    { id: 'paytm', label: 'Paytm UPI', icon: 'qr_code_2' },
-                    { id: 'bhim', label: 'BHIM UPI', icon: 'currency_rupee' }
-                  ].map(app => (
+                    { hours: 1, label: '+1 hr' },
+                    { hours: 2, label: '2 hrs' },
+                    { hours: 4, label: '+4 hrs' },
+                    { hours: 8, label: 'Full Day' }
+                  ].map(dur => {
+                    const isActive = durationHours === dur.hours;
+                    return (
+                      <button
+                        key={dur.hours}
+                        type="button"
+                        onClick={() => setDurationHours(dur.hours)}
+                        className={`duration-btn py-2 rounded-lg font-label-md text-xs transition-colors cursor-pointer ${
+                          isActive
+                            ? 'bg-primary text-on-primary font-semibold shadow-sm'
+                            : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
+                        }`}
+                      >
+                        {dur.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Price Calculation Breakdown */}
+              <div className="p-space-md rounded-lg bg-surface-container flex flex-col gap-space-xs">
+                <div className="flex items-center justify-between text-body-sm text-on-surface-variant">
+                  <span>Standard Parking ({durationHours} hrs @ ₹{hourlyRate}/hr)</span>
+                  <span className="font-data-mono text-on-surface font-semibold">₹{baseAmount}.00</span>
+                </div>
+                <div className="flex items-center justify-between text-body-sm text-on-surface-variant">
+                  <span className="flex items-center gap-1">
+                    EV Bay Pre-conditioning
+                    <span className="material-symbols-outlined text-[13px] text-tertiary" title="Slot sensor locks and clears access ramp">
+                      info
+                    </span>
+                  </span>
+                  <span className="font-data-mono text-on-surface font-semibold">₹{preconditioningFee}.00</span>
+                </div>
+                <div className="flex items-center justify-between text-body-sm text-on-surface-variant">
+                  <span>Escrow &amp; Guaranteed Vacancy</span>
+                  <span className="font-data-mono text-on-surface font-semibold">₹{escrowFee}.00</span>
+                </div>
+                <div className="pt-space-xs mt-space-xs flex items-center justify-between border-t border-outline-variant/30">
+                  <div>
+                    <div className="font-label-caps text-label-caps uppercase text-secondary font-bold">Total Amount Due</div>
+                    <div className="font-label-caps text-[9px] text-tertiary font-bold">Zero Surge Guarantee</div>
+                  </div>
+                  <div className="font-display text-[26px] leading-none font-bold text-primary">
+                    ₹{totalAmount}.00
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Mode Selection */}
+              <div className="flex flex-col gap-1.5">
+                <span className="font-label-caps text-label-caps text-on-surface-variant uppercase font-bold">
+                  Instant Checkout Method
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 'upi', label: 'UPI / GPay', icon: 'account_balance_wallet' },
+                    { id: 'fastag', label: 'Fastag Toll', icon: 'toll' },
+                    { id: 'card', label: 'Card', icon: 'credit_card' }
+                  ].map(m => (
                     <button
-                      key={app.id}
+                      key={m.id}
                       type="button"
-                      onClick={() => setUpiApp(app.id)}
-                      className={`p-3 rounded-xl border flex flex-col items-center gap-1 transition-all ${
-                        upiApp === app.id
-                          ? 'border-primary bg-primary/10 text-primary'
-                          : 'border-outline-variant/40 bg-surface-container hover:bg-surface-bright text-on-surface-variant'
+                      onClick={() => setPayMethod(m.id)}
+                      className={`cursor-pointer flex flex-col items-center justify-center p-2.5 rounded-lg transition-colors text-center ${
+                        payMethod === m.id
+                          ? 'bg-surface-container-highest text-primary border border-primary/40'
+                          : 'bg-surface-container hover:bg-surface-bright text-secondary'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-[24px]">{app.icon}</span>
-                      <span className="text-[11px] font-label-caps uppercase font-bold">{app.label}</span>
+                      <span className="material-symbols-outlined text-[18px]">{m.icon}</span>
+                      <span className="font-label-caps text-[10px] mt-1 uppercase font-bold text-on-surface">
+                        {m.label}
+                      </span>
                     </button>
                   ))}
                 </div>
-              )}
+              </div>
 
-              {paymentMethod === 'card' && (
-                <div className="space-y-2 pt-1">
-                  <input
-                    type="text"
-                    disabled
-                    value="•••• •••• •••• 4242 (Simulated Platinum Card)"
-                    className="w-full px-4 py-2.5 rounded-xl bg-surface-container border border-outline-variant/40 text-on-surface-variant font-data-mono text-sm"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      disabled
-                      value="12/28"
-                      className="px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/40 text-on-surface-variant font-data-mono text-sm"
-                    />
-                    <input
-                      type="text"
-                      disabled
-                      value="•••"
-                      className="px-4 py-2 rounded-xl bg-surface-container border border-outline-variant/40 text-on-surface-variant font-data-mono text-sm"
-                    />
-                  </div>
+              {/* SIH Judge Demo Outcome Selector */}
+              <div className="p-space-sm rounded-lg bg-surface-container-highest/60 border border-primary/30 flex flex-col gap-1">
+                <div className="flex items-center justify-between text-[10px] font-label-caps uppercase text-primary font-bold">
+                  <span>Judge Simulation Mode</span>
+                  <span>DEMO_OUTCOME</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1">
+                  {['success', 'failure', 'timeout'].map(mode => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setDemoOutcome(mode)}
+                      className={`py-1 text-[10px] rounded font-label-caps uppercase font-bold transition-all cursor-pointer ${
+                        demoOutcome === mode
+                          ? 'bg-primary text-on-primary'
+                          : 'bg-surface-container text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {errorMessage && (
+                <div className="p-space-sm rounded-lg bg-error-container/30 border border-error text-error text-xs font-data-mono">
+                  {errorMessage}
                 </div>
               )}
-            </div>
 
-            {/* DEMO SCENARIO SELECTOR (Section 5.2.6 Required for SIH Judges) */}
-            <div className="p-space-md rounded-2xl bg-surface-container-highest/60 border border-primary/50 flex flex-col gap-space-sm">
-              <div className="flex items-center justify-between">
-                <span className="font-label-caps text-label-caps uppercase text-primary font-bold flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px]">science</span>
-                  SIH Judge Test Scenario Selector
-                </span>
-                <span className="text-[10px] font-data-mono text-on-surface-variant">
-                  DEMO_MODE=true
-                </span>
-              </div>
-              <p className="text-xs text-on-surface-variant">
-                Simulate different payment engine outcomes to verify transactional atomic consistency.
-              </p>
-              <div className="grid grid-cols-3 gap-2">
+              {/* Primary CTA Button */}
+              <div className="flex flex-col gap-space-xs pt-space-xs">
                 <button
                   type="button"
-                  onClick={() => setDemoOutcome('success')}
-                  className={`py-2 px-3 rounded-lg text-xs font-label-caps uppercase font-bold transition-all border ${
-                    demoOutcome === 'success'
-                      ? 'bg-tertiary-container/30 border-tertiary text-tertiary ring-1 ring-tertiary'
-                      : 'bg-surface-container border-outline-variant/40 text-on-surface-variant'
-                  }`}
+                  disabled={processing}
+                  onClick={handleConfirmReservation}
+                  className="w-full py-3.5 px-space-md rounded-full bg-primary hover:bg-primary-container text-on-primary font-label-md text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-primary/25 transition-all transform active:scale-[0.99] text-center cursor-pointer"
                 >
-                  ✓ Success
+                  {processing ? (
+                    <span>Securing Pass...</span>
+                  ) : (
+                    <>
+                      <span>Lock Bay {selectedBay} &amp; Generate Pass</span>
+                      <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </>
+                  )}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setDemoOutcome('failure')}
-                  className={`py-2 px-3 rounded-lg text-xs font-label-caps uppercase font-bold transition-all border ${
-                    demoOutcome === 'failure'
-                      ? 'bg-error-container/30 border-error text-error ring-1 ring-error'
-                      : 'bg-surface-container border-outline-variant/40 text-on-surface-variant'
-                  }`}
-                >
-                  ✗ Failure
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDemoOutcome('timeout')}
-                  className={`py-2 px-3 rounded-lg text-xs font-label-caps uppercase font-bold transition-all border ${
-                    demoOutcome === 'timeout'
-                      ? 'bg-primary-container/30 border-primary text-primary ring-1 ring-primary'
-                      : 'bg-surface-container border-outline-variant/40 text-on-surface-variant'
-                  }`}
-                >
-                  ⏱ Timeout
-                </button>
+                <div className="flex items-center justify-center gap-1.5 text-center text-on-surface-variant font-body-sm text-xs pt-1">
+                  <span className="material-symbols-outlined text-tertiary text-[14px]">verified_user</span>
+                  <span>Free cancellation up to 15 mins before entry. Slot is 100% held.</span>
+                </div>
               </div>
-            </div>
-
-            {errorMessage && (
-              <div className="p-space-md rounded-xl bg-error-container/30 border border-error text-error text-xs font-data-mono">
-                {errorMessage}
-              </div>
-            )}
-
-            {/* Pay Button */}
-            <button
-              type="submit"
-              disabled={processing || lockExpired}
-              className="w-full py-3.5 rounded-full bg-primary-container hover:bg-primary text-on-primary font-headline-sm text-base font-bold flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(216,166,74,0.35)] transition-all disabled:opacity-50"
-            >
-              {processing ? (
-                <span>Authorizing Atomic Transaction...</span>
-              ) : (
-                <>
-                  <span>Pay ₹{totalAmount} & Generate Signed Pass</span>
-                  <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-
-        {/* Right Column: Order Summary & Space Snapshot */}
-        <div className="lg:col-span-5 flex flex-col gap-space-md">
-          {/* Space Info Card */}
-          <div className="p-space-lg rounded-2xl bg-surface-container-low border border-outline-variant/30 flex flex-col gap-space-md shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="text-[10px] font-label-caps uppercase px-2 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
-                  Confirmed Bay Ingress
-                </span>
-                <h3 className="font-headline-sm text-headline-sm font-bold text-on-surface mt-1">
-                  {space.name}
-                </h3>
-                <p className="font-body-sm text-xs text-on-surface-variant">{space.address}</p>
-              </div>
-              <div className="w-12 h-12 rounded-xl bg-surface-container-high flex flex-col items-center justify-center border border-outline-variant/40">
-                <span className="font-data-mono text-xs font-bold text-primary">{slotCode}</span>
-                <span className="text-[9px] font-label-caps text-on-surface-variant">BAY</span>
-              </div>
-            </div>
-
-            <div className="p-space-sm rounded-xl bg-surface-container-lowest flex items-center justify-between text-xs font-data-mono">
-              <span className="text-on-surface-variant">Walking to Venue:</span>
-              <span className="text-tertiary font-bold">
-                {(space.walkingDistanceMeters / 1000).toFixed(1)} km (~{Math.round(space.walkingDistanceMeters / 80)} min)
-              </span>
-            </div>
-
-            {/* Price Breakdown */}
-            <div className="space-y-2 pt-space-xs text-xs">
-              <div className="flex items-center justify-between text-on-surface-variant">
-                <span>Parking Base Rate ({hours}h @ ₹{baseRate}/h)</span>
-                <span className="font-data-mono text-on-surface font-semibold">₹{subtotal}</span>
-              </div>
-              <div className="flex items-center justify-between text-on-surface-variant">
-                <span>Platform Facilitation & Telemetry Fee</span>
-                <span className="font-data-mono text-on-surface font-semibold">₹{platformFee}</span>
-              </div>
-              <div className="flex items-center justify-between text-on-surface-variant">
-                <span>GST (18% Statutory)</span>
-                <span className="font-data-mono text-on-surface font-semibold">₹{gst}</span>
-              </div>
-              <div className="pt-2 border-t border-outline-variant/30 flex items-center justify-between text-sm">
-                <span className="font-bold text-on-surface">Total Guaranteed Amount</span>
-                <span className="font-data-mono text-lg font-bold text-primary">₹{totalAmount}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Failsafe Guarantee Notice */}
-          <div className="p-space-md rounded-2xl bg-surface-container-low border border-tertiary/30 flex items-start gap-space-sm text-xs">
-            <span className="material-symbols-outlined text-tertiary text-[20px] shrink-0">verified</span>
-            <div className="space-y-1">
-              <span className="font-label-caps uppercase text-tertiary font-bold block">
-                10% Reserve Pool Guarantee
-              </span>
-              <p className="text-on-surface-variant leading-relaxed">
-                If the allocated bay is obstructed upon arrival, tap "Report Problem" in your pass for instant automated reassignment to a priority reserve bay.
-              </p>
             </div>
           </div>
         </div>

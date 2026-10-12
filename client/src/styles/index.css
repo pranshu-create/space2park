@@ -16,4 +16,43 @@
     overscroll-behavior: none;
     -webkit-font-smoothing: antialiased;
   }
+
+  main > :first-child {
+    margin-top: 0 !important;
+  }
+  main > :last-child {
+    margin-bottom: 0 !important;
+  }
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes radarSweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-radar-sweep {
+  transform-origin: 320px 410px;
+  animation: radarSweep 7s linear infinite;
+}
+
+@keyframes pulseRoute {
+  0% {
+    stroke-dashoffset: 200;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.route-flow {
+  stroke-dasharray: 8 6;
+  animation: pulseRoute 2.5s linear infinite;
 }
