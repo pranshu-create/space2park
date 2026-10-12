@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useParams, Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { useAuth } from '../context/AuthContext';
+import ThreeSpatialDeck from '../components/ThreeSpatialDeck';
 
 export default function BookingCheckout() {
   const { spaceId } = useParams();
@@ -22,6 +23,7 @@ export default function BookingCheckout() {
   const [demoOutcome, setDemoOutcome] = useState('success');
   const [processing, setProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [viewMode, setViewMode] = useState('blueprint');
 
   // Lock countdown timer
   const [timeLeftSeconds, setTimeLeftSeconds] = useState(300);
@@ -171,27 +173,63 @@ export default function BookingCheckout() {
 
             {/* 3D Spatial Deck Visualizer & Slot Matrix */}
             <div className="bg-surface-container-lowest rounded-xl overflow-hidden shadow-xl flex flex-col border border-outline-variant/30">
-              {/* Viewport Visual Context Image */}
-              <div
-                className="relative w-full h-64 md:h-72 bg-cover bg-center"
-                style={{
-                  backgroundImage:
-                    "url('/assets/3d_deck.png'), url('https://lh3.googleusercontent.com/aida-public/AB6AXuBb2nHzFS6H7Fd5N350jsKZdNrc5Rdeb6-KzzvzM8xcM1cfDkk-8Ay0RZJ2twVBDXPN7htgekYABZGts7HG5Yq7NYg-1Gf3qUtQyzZhsEqhpwTwLmJLuGq8ZXvt4BUdlY-zYFA7TuM2yzfaNbT86zbafT7VaRX0Hyd1oJYpe6cXf6dbSmiEq5_L2SbZyKRQE9SeAVVEE4I4n-TzG7l9eTvGVO7ZBX8493bL4Lpq_q5Pm0JUU3UxJwalEQ')"
-                }}
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/60 to-transparent"></div>
-                {/* Floating Deck HUD Badges */}
-                <div className="absolute top-space-md left-space-md flex flex-wrap gap-2">
-                  <div className="px-space-sm py-1 rounded bg-surface-container-lowest/90 backdrop-blur-md text-on-surface font-data-mono text-xs flex items-center gap-1.5 shadow-sm font-bold">
-                    <span className="material-symbols-outlined text-tertiary text-[14px]">sensors</span>
-                    CAD Sync: 80ms Ultra-Wideband
+              {/* Viewport Visual Context Image & WebGL Toggle */}
+              <div className="relative w-full h-64 md:h-72 bg-surface-container-lowest overflow-hidden">
+                {viewMode === 'blueprint' ? (
+                  <div
+                    className="relative w-full h-full bg-cover bg-center"
+                    style={{
+                      backgroundImage:
+                        "url('/assets/3d_deck.png'), url('https://lh3.googleusercontent.com/aida-public/AB6AXuBb2nHzFS6H7Fd5N350jsKZdNrc5Rdeb6-KzzvzM8xcM1cfDkk-8Ay0RZJ2twVBDXPN7htgekYABZGts7HG5Yq7NYg-1Gf3qUtQyzZhsEqhpwTwLmJLuGq8ZXvt4BUdlY-zYFA7TuM2yzfaNbT86zbafT7VaRX0Hyd1oJYpe6cXf6dbSmiEq5_L2SbZyKRQE9SeAVVEE4I4n-TzG7l9eTvGVO7ZBX8493bL4Lpq_q5Pm0JUU3UxJwalEQ')"
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-t from-surface-container-lowest via-surface-container-lowest/60 to-transparent"></div>
                   </div>
-                  <div className="px-space-sm py-1 rounded bg-surface-container-lowest/90 backdrop-blur-md text-primary font-data-mono text-xs shadow-sm font-bold">
-                    Ramp Clearance: 2.80m
+                ) : (
+                  <ThreeSpatialDeck selectedBayCode={selectedBay} className="w-full h-full" />
+                )}
+
+                {/* Floating Deck HUD Badges & Mode Switcher */}
+                <div className="absolute top-space-md left-space-md right-space-md flex flex-wrap items-center justify-between gap-2 z-10">
+                  <div className="flex flex-wrap gap-2">
+                    <div className="px-space-sm py-1 rounded bg-surface-container-lowest/90 backdrop-blur-md text-on-surface font-data-mono text-xs flex items-center gap-1.5 shadow-sm font-bold">
+                      <span className="material-symbols-outlined text-tertiary text-[14px]">sensors</span>
+                      CAD Sync: 80ms Ultra-Wideband
+                    </div>
+                    <div className="px-space-sm py-1 rounded bg-surface-container-lowest/90 backdrop-blur-md text-primary font-data-mono text-xs shadow-sm font-bold">
+                      Ramp Clearance: 2.80m
+                    </div>
+                  </div>
+
+                  {/* Blueprint vs 3D WebGL Switcher */}
+                  <div className="flex items-center gap-1 p-1 rounded-full bg-surface-container-lowest/90 backdrop-blur-md border border-outline-variant/40">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('blueprint')}
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-label-caps uppercase font-bold transition-all ${
+                        viewMode === 'blueprint'
+                          ? 'bg-primary-container text-on-primary shadow-sm'
+                          : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      Blueprint
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode('webgl3d')}
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-label-caps uppercase font-bold transition-all flex items-center gap-1 ${
+                        viewMode === 'webgl3d'
+                          ? 'bg-primary-container text-on-primary shadow-sm'
+                          : 'text-on-surface-variant hover:text-on-surface'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[12px]">view_in_ar</span>
+                      3D Orbit
+                    </button>
                   </div>
                 </div>
 
-                <div className="absolute bottom-space-md left-space-md right-space-md flex items-center justify-between pointer-events-none">
+                <div className="absolute bottom-space-md left-space-md right-space-md flex items-center justify-between pointer-events-none z-10">
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1.5 text-xs text-on-surface bg-surface-container-high/90 px-2.5 py-1 rounded-full backdrop-blur-sm">
                       <span className="w-2 h-2 rounded-full bg-primary animate-ping"></span>

@@ -491,7 +491,7 @@ export default function MyBookings() {
               <img
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 alt="Photorealistic dark concrete architectural indoor parking pavilion for luxury electric cars"
-                src="/assets/hero_car.png"
+                src="/assets/pavilion_guidance.png"
                 onError={e => {
                   e.currentTarget.src =
                     'https://lh3.googleusercontent.com/aida-public/AB6AXuAdry9EvD3NNZGcojrokoCsqauWZumI_-nB9p26Bn6AVzb_n0uYSMKWXST_sLPbru8Bo26qrvW435B3yegQ1cBTYtkJSApXCLys7YV6ovj8yKNUbQwc3UNVXGMqfZB2kTmNIzgmmu82U_Or7MvfzPKtG-eoI-BPNFSoo2QjkP-lM4oASmz2iuwpEjtCtd794J4P96PxgyrE0HrrR-hudr99rU4w3XgI3GPKI2J42LXR2e9PiglhWWSuqw';
