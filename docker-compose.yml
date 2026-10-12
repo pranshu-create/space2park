@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with PostGIS extension for spatial queries & exclusion constraints
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: space2park-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: space2park
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for atomic distributed locks (NX PX) & Pub/Sub
+  redis:
+    image: redis:7-alpine
+    container_name: space2park-redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+  redisdata:

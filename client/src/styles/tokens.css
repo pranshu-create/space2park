@@ -1,0 +1,63 @@
+:root {
+  /* Surface & Background */
+  --color-canvas: #0c0e10;
+  --color-surface: #121416;
+  --color-surface-dim: #121416;
+  --color-surface-bright: #38393c;
+  --color-surface-container-lowest: #0c0e10;
+  --color-surface-container-low: #1a1c1e;
+  --color-surface-container: #1e2022;
+  --color-surface-container-high: #282a2c;
+  --color-surface-container-highest: #333537;
+
+  /* Typography Colors */
+  --color-on-surface: #e2e2e5;
+  --color-on-surface-variant: #d3c4b1;
+  --color-outline: #9b8f7d;
+  --color-outline-variant: #4f4537;
+
+  /* Warm Luxury Gold Accents */
+  --color-primary: #f6c162;
+  --color-primary-container: #d8a64a;
+  --color-on-primary: #422c00;
+  --color-on-primary-container: #583d00;
+  --color-primary-fixed: #ffdeaa;
+  --color-primary-fixed-dim: #f3be5f;
+
+  /* Telemetry Indicators */
+  --color-tertiary: #44e2b1;
+  --color-tertiary-container: #0ac597;
+  --color-on-tertiary: #003828;
+  --color-error: #ffb4ab;
+  --color-error-container: #93000a;
+  --color-secondary: #c3c7cc;
+  --color-secondary-container: #43474c;
+}
+
+@keyframes radarSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulseRoute {
+  0% { stroke-dashoffset: 200; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.animate-radar-sweep {
+  animation: radarSweep 8s linear infinite;
+}
+
+.route-flow {
+  stroke-dasharray: 8 6;
+  animation: pulseRoute 2.5s linear infinite;
+}
+
+/* Custom scrollbars hidden per Stitch spec */
+::-webkit-scrollbar {
+  display: none;
+}
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

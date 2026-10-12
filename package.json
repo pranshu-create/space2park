@@ -1,0 +1,10 @@
+{
+  "name": "space2park-root",
+  "version": "1.0.0",
+  "description": "SPACE2PARK - Intelligent AI-Powered Event-Based Smart Parking Network",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "seed": "cd server && node src/seed/seed.js",
+    "test": "cd server && npm test"
+  }
+}

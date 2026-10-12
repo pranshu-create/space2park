@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 64" fill="none">
+  <!-- Solid Dark Badge Background for High Visibility -->
+  <rect width="280" height="64" rx="14" fill="#0c0e10"/>
+  <rect x="0.5" y="0.5" width="279" height="63" rx="13.5" stroke="#d8a64a" stroke-opacity="0.25"/>
+
+  <!-- Iconic Architectural Emblem -->
+  <g transform="translate(18, 12)">
+    <!-- Outer Precision Chamfered Diamond / Parking Bay Frame -->
+    <path d="M20 2L36 10V30L20 38L4 30V10L20 2Z" fill="#16181b" stroke="#d8a64a" stroke-width="1.8" stroke-linejoin="round"/>
+    
+    <!-- Bold Minimalist 'P' Interlocking Blade -->
+    <path d="M14 28V11H23.5C26.5 11 29 13.5 29 16.5C29 19.5 26.5 22 23.5 22H14" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Dynamic Gold Arrow / Upward Transit Beam -->
+    <path d="M20 16.5L25 16.5" stroke="#f6c162" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="20" cy="28" r="2" fill="#44e2b1"/>
+  </g>
+
+  <!-- Clean Editorial Typography -->
+  <text x="68" y="34" fill="#ffffff" font-family="'Manrope', -apple-system, sans-serif" font-size="17" font-weight="800" letter-spacing="0.14em">SPACE<tspan fill="#f6c162">2</tspan>PARK</text>
+  
+  <text x="69" y="47" fill="#8d949d" font-family="'Inter', sans-serif" font-size="7.5" font-weight="600" letter-spacing="0.28em">AUTONOMOUS MOBILITY GRID</text>
+</svg>

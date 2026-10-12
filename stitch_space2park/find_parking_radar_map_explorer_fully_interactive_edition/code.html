@@ -1,0 +1,1246 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<meta content="web_standard" name="shell-type">
+<title>Space2Park | Intelligent Real-Time Parking Grid</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Manrope:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+          "background": "#121416",
+          "secondary-fixed-dim": "#c3c7cc",
+          "surface": "#121416",
+          "on-surface": "#e2e2e5",
+          "on-primary-fixed": "#271900",
+          "inverse-on-surface": "#2f3033",
+          "inverse-primary": "#7d5700",
+          "on-background": "#e2e2e5",
+          "surface-container-highest": "#333537",
+          "surface-bright": "#38393c",
+          "on-error-container": "#ffdad6",
+          "tertiary-container": "#0ac597",
+          "on-primary": "#422c00",
+          "primary-container": "#d8a64a",
+          "surface-tint": "#f3be5f",
+          "on-primary-fixed-variant": "#5f4100",
+          "on-secondary-fixed-variant": "#43474c",
+          "primary-fixed-dim": "#f3be5f",
+          "on-error": "#690005",
+          "on-tertiary-fixed": "#002116",
+          "secondary-container": "#43474c",
+          "secondary": "#c3c7cc",
+          "on-tertiary-fixed-variant": "#00513c",
+          "outline-variant": "#4f4537",
+          "surface-container": "#1e2022",
+          "surface-dim": "#121416",
+          "tertiary-fixed": "#64fcc9",
+          "primary-fixed": "#ffdeaa",
+          "on-surface-variant": "#d3c4b1",
+          "outline": "#9b8f7d",
+          "surface-container-low": "#1a1c1e",
+          "on-secondary-container": "#b2b5bb",
+          "surface-variant": "#333537",
+          "inverse-surface": "#e2e2e5",
+          "on-primary-container": "#583d00",
+          "primary": "#f6c162",
+          "error": "#ffb4ab",
+          "surface-container-lowest": "#0c0e10",
+          "on-tertiary-container": "#004b37",
+          "on-secondary-fixed": "#181c20",
+          "secondary-fixed": "#e0e3e8",
+          "surface-container-high": "#282a2c",
+          "tertiary": "#44e2b1",
+          "on-secondary": "#2d3135",
+          "error-container": "#93000a",
+          "on-tertiary": "#003828",
+          "tertiary-fixed-dim": "#40dfae"
+        },
+        "borderRadius": {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "full": "9999px"
+        },
+        "spacing": {
+          "space-sm": "0.5rem",
+          "gutter": "1.5rem",
+          "space-xs": "0.25rem",
+          "space-md": "1rem",
+          "gutter-mobile": "1rem",
+          "space-lg": "1.5rem",
+          "margin-mobile": "1.25rem",
+          "space-xl": "2.5rem",
+          "margin": "3rem"
+        },
+        "fontFamily": {
+          "body-lg": ["Inter", "sans-serif"],
+          "headline-sm": ["Manrope", "sans-serif"],
+          "headline-md": ["Manrope", "sans-serif"],
+          "headline-lg": ["Manrope", "sans-serif"],
+          "body-sm": ["Inter", "sans-serif"],
+          "label-caps": ["Manrope", "sans-serif"],
+          "display": ["Manrope", "sans-serif"],
+          "data-mono": ["Inter", "monospace"],
+          "body-md": ["Inter", "sans-serif"],
+          "label-md": ["Inter", "sans-serif"],
+          "headline-lg-mobile": ["Manrope", "sans-serif"]
+        },
+        "fontSize": {
+          "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "-0.005em", fontWeight: "400" }],
+          "headline-sm": ["20px", { lineHeight: "28px", letterSpacing: "0em", fontWeight: "600" }],
+          "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }],
+          "headline-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.02em", fontWeight: "600" }],
+          "body-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "400" }],
+          "label-caps": ["11px", { lineHeight: "14px", letterSpacing: "0.12em", fontWeight: "700" }],
+          "display": ["48px", { lineHeight: "56px", letterSpacing: "-0.03em", fontWeight: "700" }],
+          "data-mono": ["14px", { lineHeight: "18px", letterSpacing: "0.04em", fontWeight: "600" }],
+          "body-md": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }],
+          "label-md": ["13px", { lineHeight: "18px", letterSpacing: "0.01em", fontWeight: "500" }],
+          "headline-lg-mobile": ["28px", { lineHeight: "36px", letterSpacing: "-0.01em", fontWeight: "600" }]
+        }
+      }
+    }
+  }
+</script>
+<style>
+@layer base {
+  html, body { margin: 0; padding: 0; }
+  body { overscroll-behavior: none; }
+}
+::-webkit-scrollbar { display: none; }
+@keyframes radarSweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-radar-sweep {
+  transform-origin: 320px 410px;
+  animation: radarSweep 7s linear infinite;
+}
+@keyframes pulseRoute {
+  0% { stroke-dashoffset: 200; }
+  100% { stroke-dashoffset: 0; }
+}
+.route-flow {
+  stroke-dasharray: 8 6;
+  animation: pulseRoute 2.5s linear infinite;
+}
+</style>
+</head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- GLOBAL HEADER -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest/90 backdrop-blur-2xl border-b border-outline-variant/40"><div class="h-16 md:h-20 w-full px-margin-mobile md:px-margin flex items-center justify-between gap-space-md bg-surface-container-lowest/95 backdrop-blur-2xl"><div class="flex items-center gap-space-md shrink-0"><a class="flex items-center gap-space-sm focus:outline-none" data-path="home" href="#"><img src="https://lh3.googleusercontent.com/aida/AEtjO1WVIpU8vsFpP1VicbQOLikz4kLds83kupaD5stKKZ5lYGKAU7D1UnnMBnz6BQXHJa-BFWPXX5i4o7kRL5sxDyuuQPyNO_LuRLJmd9oO6GLmUv6z7i3fo8L4Kna79KsAVyrFJ3fqUDFwL077qMTagg8qITymkxsd1EaFTzotPG5seb9prbfPgrIXxTRIfh7zYoBCmpEu94phbnb8WyBT738fA8-z9OnDQBmIWWPjTzJFPn-4SRvM6XxF-Q" alt="Space2Park Logo" class="h-10 md:h-11 w-auto object-contain"></a></div><nav class="hidden xl:flex items-center gap-space-md 2xl:gap-space-lg"><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors py-space-sm" data-path="home" href="#">Home</a><a aria-current="page" class="transition-colors text-primary font-semibold border-b-2 border-primary py-space-sm" data-path="find-parking" href="#">Find Parking</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors py-space-sm" data-path="events" href="#">Events</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors py-space-sm" data-path="list-your-space" href="#">List Your Space</a><a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors py-space-sm" data-path="how-it-works" href="#">How It Works</a></nav><div class="flex items-center gap-space-sm md:gap-space-md shrink-0"><div class="hidden md:flex items-center gap-space-xs px-space-sm py-1.5 rounded-full bg-surface-container border border-outline-variant/50 text-on-surface-variant"><span class="material-symbols-outlined text-[16px] text-tertiary">near_me</span><span class="font-label-caps text-label-caps tracking-wider text-on-surface">Indore, MP</span><span class="text-outline-variant">|</span><div class="flex items-center gap-1"><button class="px-2 py-0.5 rounded-full bg-primary-container text-on-primary font-label-caps text-[10px] uppercase font-bold transition-all" id="nav-btn-car" onclick="setVehicleMode('car')">Car</button><button class="px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface font-label-caps text-[10px] uppercase transition-all" id="nav-btn-bike" onclick="setVehicleMode('bike')">Bike</button></div></div><button class="hidden sm:inline-flex items-center gap-1 font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors px-2 py-1" onclick="openPassDrawer('citadel')"><span class="material-symbols-outlined text-[16px] text-primary">confirmation_number</span><span class="">My Passes</span></button><a class="hidden lg:inline-flex items-center justify-center px-space-md py-space-xs rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold transition-all duration-200 shadow-[0_0_16px_rgba(216,166,74,0.15)]" data-path="list-your-space" href="#">List Space</a><div class="flex items-center gap-space-xs pl-space-xs"><div class="relative cursor-pointer" onclick="showToast('Pilot Indore Account • 4,200 Grid Creds')"><div class="w-9 h-9 rounded-full bg-surface-container-high border border-primary-container/50 flex items-center justify-center text-primary shadow-[0_0_12px_rgba(216,166,74,0.2)]"><span class="material-symbols-outlined text-[20px]">account_circle</span></div><span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary ring-2 ring-surface-container-lowest animate-pulse"></span></div></div></div></div></header>
+<main class="w-full pt-20 bg-surface min-h-screen">
+<div class="flex flex-col w-full">
+<!-- Top Telemetry & Control Ribbon -->
+<section class="w-full bg-surface-container-lowest px-margin-mobile md:px-margin py-space-sm shadow-xl border-b border-outline-variant/30">
+<div class="flex flex-col xl:flex-row xl:items-center justify-between gap-space-md">
+<!-- Segmented Mode & Search Crosshairs -->
+<div class="flex flex-wrap md:flex-nowrap items-center gap-space-sm flex-1">
+<!-- Vehicle Toggle -->
+<div class="flex items-center p-1 rounded-full bg-surface-container-low" id="vehicle-toggle-group">
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-full bg-primary-container text-on-primary font-label-caps text-label-caps transition-all shadow-sm" id="btn-car-mode" onclick="setVehicleMode('car')" type="button">
+<span class="material-symbols-outlined text-[16px]">directions_car</span>
+<span class="">Car / SUV</span>
+</button>
+<button class="flex items-center gap-1.5 px-space-md py-1.5 rounded-full text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps transition-all" id="btn-bike-mode" onclick="setVehicleMode('bike')" type="button">
+<span class="material-symbols-outlined text-[16px]">two_wheeler</span>
+<span class="">Bike / Moto</span>
+</button>
+</div>
+<!-- Search Input Bar with Live Filtering -->
+<div class="relative flex-1 min-w-[280px]">
+<div class="flex items-center px-space-md py-2 rounded-full bg-surface-container-low focus-within:ring-1 focus-within:ring-primary border border-outline-variant/30">
+<span class="material-symbols-outlined text-primary text-[20px] mr-2">search</span>
+<input class="w-full bg-transparent text-on-surface font-body-md text-body-md focus:outline-none placeholder:text-on-surface-variant" id="search-input" placeholder="Search address, corridor or venue (e.g. Citadel, Vijay Nagar)..." type="text" value="Phoenix Citadel, Bypass Rd, Indore">
+<button aria-label="Use Current GPS" class="flex items-center gap-1 pl-2 text-tertiary hover:text-tertiary-fixed transition-colors" onclick="recenterGPS()">
+<span class="material-symbols-outlined text-[18px]">my_location</span>
+<span class="font-data-mono text-body-sm text-tertiary hidden sm:inline">GPS: ACTIVE</span>
+</button>
+</div>
+</div>
+<!-- Time & Duration Selector -->
+<div class="flex items-center gap-2 px-space-md py-2 rounded-full bg-surface-container-low text-on-surface shrink-0 cursor-pointer hover:bg-surface-container border border-outline-variant/30" onclick="showToast('Time slot set: Today, Immediate Arrival (2h Lock)')">
+<span class="material-symbols-outlined text-primary-container text-[18px]">schedule</span>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase leading-none">Arrival • Slot</span>
+<span class="font-data-mono text-body-sm text-on-surface font-medium leading-tight" id="active-slot-duration">Today, Now (2h Reserve)</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span>
+</div>
+</div>
+<!-- Quick Sorting Action -->
+<div class="flex items-center gap-space-sm shrink-0 self-end xl:self-auto">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Sort By</span>
+<div class="relative">
+<select aria-label="Sort parking options" class="appearance-none bg-surface-container-high text-on-surface font-label-md text-label-md py-1.5 pl-3 pr-8 rounded-full focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer border border-outline-variant/40" id="sort-select" onchange="handleSort(this.value)">
+<option value="distance">Distance (Nearest First)</option>
+<option value="price">Price (Lowest First)</option>
+<option value="capacity">Highest Available Capacity</option>
+<option value="ev">EV Ultra-Fast Rated</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[16px] text-on-surface-variant">unfold_more</span>
+</div>
+</div>
+</div>
+<!-- Filter Attribute Badges Ribbon -->
+<div class="flex items-center gap-2 pt-space-xs overflow-x-auto no-scrollbar">
+<button class="filter-pill shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container/20 text-primary border border-primary/40 font-label-caps text-[10px] tracking-wider uppercase transition-all" data-filter="ev" onclick="toggleFilterTag(this, 'ev')">
+<span class="material-symbols-outlined text-[14px]">bolt</span>
+<span class="">EV DC Fast Charge</span>
+</button>
+<button class="filter-pill shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-caps text-[10px] tracking-wider uppercase transition-colors" data-filter="cctv" onclick="toggleFilterTag(this, 'cctv')">
+<span class="material-symbols-outlined text-[14px] text-tertiary">shield</span>
+<span class="">24/7 CCTV &amp; Security</span>
+</button>
+<button class="filter-pill shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-caps text-[10px] tracking-wider uppercase transition-colors" data-filter="covered" onclick="toggleFilterTag(this, 'covered')">
+<span class="material-symbols-outlined text-[14px] text-secondary">roofing</span>
+<span class="">Covered Subterranean</span>
+</button>
+<button class="filter-pill shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-caps text-[10px] tracking-wider uppercase transition-colors" data-filter="valet" onclick="toggleFilterTag(this, 'valet')">
+<span class="material-symbols-outlined text-[14px] text-primary">key</span>
+<span class="">Valet Ingress</span>
+</button>
+<button class="filter-pill shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-label-caps text-[10px] tracking-wider uppercase transition-colors" data-filter="event" onclick="toggleFilterTag(this, 'event')">
+<span class="material-symbols-outlined text-[14px] text-error">confirmation_number</span>
+<span class="">Event Corridor</span>
+</button>
+<button class="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-low hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface text-[10px] font-label-caps uppercase transition-colors" onclick="resetAllFilters()">
+<span class="material-symbols-outlined text-[12px]">restart_alt</span>
+<span class="">Reset Filters</span>
+</button>
+</div>
+</section>
+<!-- Main Exploration Workspace: 45% Feed | 55% Spatial Canvas -->
+<div class="relative w-full flex flex-col lg:flex-row items-stretch flex-1 min-h-[calc(100vh-144px)]">
+<!-- LEFT PANE: Scrollable Radar Feed -->
+<div class="w-full lg:w-[45%] xl:w-[42%] flex flex-col bg-surface-container-lowest p-margin-mobile md:p-space-lg overflow-y-auto max-h-none lg:max-h-[calc(100vh-144px)] z-10 shadow-2xl border-r border-outline-variant/30" id="deck-list-container">
+<!-- Sector Header -->
+<div class="flex flex-col gap-1 pb-space-sm">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">Indore Live Grid</span>
+<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-tertiary-container/20 text-tertiary font-data-mono text-body-sm">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-ping"></span>
+                98.4% Sync
+              </span>
+</div>
+<span class="font-data-mono text-body-sm text-primary-container font-semibold" id="hubs-count-label">4 Hubs Active</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Real-time ultrasonic bay status calibrated for MP-09 high-density corridors.</p>
+</div>
+<!-- Corridor Navigation Pills -->
+<div class="flex items-center gap-2 py-space-xs overflow-x-auto no-scrollbar mb-space-sm" id="area-filter-row">
+<button class="area-btn px-3 py-1 rounded-full bg-primary text-on-primary font-label-caps text-label-caps tracking-wider uppercase font-semibold transition-all" onclick="filterByArea('all', this)">All Indore</button>
+<button class="area-btn px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps tracking-wider uppercase transition-colors" onclick="filterByArea('vijay-nagar', this)">Vijay Nagar</button>
+<button class="area-btn px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps tracking-wider uppercase transition-colors" onclick="filterByArea('bypass', this)">Bypass Road</button>
+<button class="area-btn px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps tracking-wider uppercase transition-colors" onclick="filterByArea('palasia', this)">Palasia</button>
+<button class="area-btn px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps tracking-wider uppercase transition-colors" onclick="filterByArea('super-corridor', this)">Super Corridor</button>
+</div>
+<!-- Feed Location Cards -->
+<div class="flex flex-col gap-space-md" id="cards-stack">
+<!-- CARD 1: Citadel -->
+<article class="hub-card relative flex flex-col p-space-md rounded-xl bg-surface-container-low border-2 transition-all transform hover:-translate-y-0.5 group cursor-pointer border-primary shadow-[0_0_24px_rgba(216,166,74,0.18)]" data-area="bypass" data-features="ev cctv covered valet" data-hub="citadel" id="card-citadel" onclick="selectHub('citadel')">
+<div class="flex items-start justify-between gap-space-sm mb-2">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors font-bold">Phoenix Citadel Grand Deck</span>
+<span class="badge-status px-1.5 py-0.5 rounded bg-primary/20 text-primary font-label-caps text-[10px] tracking-wider uppercase border border-primary/40 font-semibold">Selected Ingress</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-tertiary">location_on</span>
+                  MR-10 Junction, Bypass Rd, Indore
+                </span>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-headline-md text-headline-md text-primary font-bold"><span class="price-val">₹50</span><span class="font-body-sm text-body-sm text-on-surface-variant">/hr</span></span>
+<span class="font-data-mono text-[11px] text-on-surface-variant">Max ₹350/day</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2 my-2 py-2 px-3 rounded-lg bg-surface-container">
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Proximity</span>
+<span class="font-data-mono text-body-md text-on-surface font-semibold">0.8 km <span class="text-tertiary font-normal">· 3m</span></span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Car Bays</span>
+<span class="font-data-mono text-body-md text-tertiary font-semibold count-car">45 / 120 <span class="text-on-surface-variant text-[11px]">(38%)</span></span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Bike Bays</span>
+<span class="font-data-mono text-body-md text-on-surface font-semibold count-bike">72 Free</span>
+</div>
+</div>
+<div class="flex flex-wrap items-center justify-between gap-2 my-2">
+<div class="flex flex-wrap items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-caps text-[10px] uppercase tracking-wider">ANPR Contactless</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-caps text-[10px] uppercase tracking-wider text-primary">60kW CCS2 EV</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-caps text-[10px] uppercase tracking-wider">Valet Option</span>
+</div>
+<div class="flex items-center gap-1 text-tertiary font-data-mono text-[11px]">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+<span class="">Sensor Sync 12s ago</span>
+</div>
+</div>
+<div class="flex items-center justify-between gap-space-sm pt-2 mt-1">
+<button class="inline-flex items-center justify-center gap-2 flex-1 py-2 px-4 rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold transition-all shadow-[0_0_16px_rgba(216,166,74,0.3)]" onclick="event.stopPropagation(); openBayModal('citadel');">
+<span class="">Select &amp; View 3D Deck</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+<button aria-label="Bookmark Bay" class="bookmark-btn p-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors" onclick="event.stopPropagation(); toggleBookmark(this);">
+<span class="material-symbols-outlined text-[20px]">bookmark_border</span>
+</button>
+</div>
+</article>
+<!-- CARD 2: Brilliant CC -->
+<article class="hub-card relative flex flex-col p-space-md rounded-xl bg-surface-container-low border-2 border-transparent hover:border-outline-variant/60 transition-all group cursor-pointer" data-area="vijay-nagar" data-features="ev cctv covered" data-hub="brilliant" id="card-brilliant" onclick="selectHub('brilliant')">
+<div class="flex items-start justify-between gap-space-sm mb-2">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors">Brilliant Convention Centre</span>
+<span class="badge-status hidden px-1.5 py-0.5 rounded bg-primary/20 text-primary font-label-caps text-[10px] tracking-wider uppercase border border-primary/40">Selected Ingress</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">location_on</span>
+                  Scheme 78, Vijay Nagar, Indore
+                </span>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-headline-md text-headline-md text-on-surface font-semibold"><span class="price-val">₹40</span><span class="font-body-sm text-body-sm text-on-surface-variant">/hr</span></span>
+<span class="font-data-mono text-[11px] text-tertiary font-semibold">Express Pass</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2 my-2 py-2 px-3 rounded-lg bg-surface-container-lowest">
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Distance</span>
+<span class="font-data-mono text-body-md text-on-surface">1.4 km · 5m</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Car Spots</span>
+<span class="font-data-mono text-body-md text-tertiary font-semibold count-car">28 / 80 Free</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Two-Wheel</span>
+<span class="font-data-mono text-body-md text-on-surface count-bike">110 Spots</span>
+</div>
+</div>
+<div class="flex items-center justify-between gap-2 mt-2">
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-caps text-[10px] uppercase">Covered B2</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-caps text-[10px] uppercase">Heavy EV Hub</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-primary font-label-md text-label-md hover:underline flex items-center gap-1" onclick="event.stopPropagation(); openBayModal('brilliant');">
+                  View Deck Details <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+<button aria-label="Bookmark Bay" class="bookmark-btn p-1 text-on-surface-variant hover:text-primary transition-colors" onclick="event.stopPropagation(); toggleBookmark(this);">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+</div>
+</article>
+<!-- CARD 3: 56 Dukan -->
+<article class="hub-card relative flex flex-col p-space-md rounded-xl bg-surface-container-low border-2 border-transparent hover:border-outline-variant/60 transition-all group cursor-pointer" data-area="palasia" data-features="cctv valet" data-hub="dukan" id="card-dukan" onclick="selectHub('dukan')">
+<div class="flex items-start justify-between gap-space-sm mb-2">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors">56 Dukan Culinary Multi-Deck</span>
+<span class="badge-status hidden px-1.5 py-0.5 rounded bg-primary/20 text-primary font-label-caps text-[10px] tracking-wider uppercase border border-primary/40">Selected Ingress</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">location_on</span>
+                  56 Shops Arcade, New Palasia
+                </span>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-headline-md text-headline-md text-on-surface font-semibold"><span class="price-val">₹35</span><span class="font-body-sm text-body-sm text-on-surface-variant">/hr</span></span>
+<span class="font-label-caps text-[10px] text-error font-bold tracking-wider uppercase">High Evening Traffic</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2 my-2 py-2 px-3 rounded-lg bg-surface-container-lowest">
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Distance</span>
+<span class="font-data-mono text-body-md text-on-surface">2.1 km · 8m</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Car Capacity</span>
+<span class="font-data-mono text-body-md text-primary font-semibold count-car">12 / 60 Free</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Two-Wheel</span>
+<span class="font-data-mono text-body-md text-on-surface count-bike">85 Spots</span>
+</div>
+</div>
+<div class="flex items-center justify-between gap-2 mt-2">
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-caps text-[10px] uppercase">Automated Lift</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-caps text-[10px] uppercase">Gourmet Ingress</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-primary font-label-md text-label-md hover:underline flex items-center gap-1" onclick="event.stopPropagation(); openBayModal('dukan');">
+                  View Deck Details <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+<button aria-label="Bookmark Bay" class="bookmark-btn p-1 text-on-surface-variant hover:text-primary transition-colors" onclick="event.stopPropagation(); toggleBookmark(this);">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+</div>
+</article>
+<!-- CARD 4: Holkar Stadium -->
+<article class="hub-card relative flex flex-col p-space-md rounded-xl bg-surface-container-low border-2 border-transparent hover:border-outline-variant/60 transition-all group cursor-pointer" data-area="palasia" data-features="event cctv" data-hub="holkar" id="card-holkar" onclick="selectHub('holkar')">
+<div class="flex items-start justify-between gap-space-sm mb-2">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors">Holkar Stadium VIP &amp; General Ring</span>
+<span class="px-1.5 py-0.5 rounded bg-error/20 text-error font-label-caps text-[10px] uppercase border border-error/40">Event Surge</span>
+<span class="badge-status hidden px-1.5 py-0.5 rounded bg-primary/20 text-primary font-label-caps text-[10px] tracking-wider uppercase border border-primary/40">Selected Ingress</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">location_on</span>
+                  Race Course Road, New Palasia
+                </span>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-headline-md text-headline-md text-on-surface font-semibold"><span class="price-val">₹80</span><span class="font-body-sm text-body-sm text-on-surface-variant">/hr</span></span>
+<span class="font-data-mono text-[11px] text-on-surface-variant">Pre-Match Lock</span>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-2 my-2 py-2 px-3 rounded-lg bg-surface-container-lowest">
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Distance</span>
+<span class="font-data-mono text-body-md text-on-surface">3.2 km · 11m</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Car Capacity</span>
+<span class="font-data-mono text-body-md text-tertiary font-semibold count-car">60 / 250 Free</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Two-Wheel</span>
+<span class="font-data-mono text-body-md text-on-surface count-bike">140 Spots</span>
+</div>
+</div>
+<div class="flex items-center justify-between gap-2 mt-2">
+<div class="flex items-center gap-1.5">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-caps text-[10px] uppercase">VIP Corridor</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-label-caps text-[10px] uppercase">Rapid Outflow</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-primary font-label-md text-label-md hover:underline flex items-center gap-1" onclick="event.stopPropagation(); openBayModal('holkar');">
+                  View Deck Details <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+<button aria-label="Bookmark Bay" class="bookmark-btn p-1 text-on-surface-variant hover:text-primary transition-colors" onclick="event.stopPropagation(); toggleBookmark(this);">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+</div>
+</article>
+</div>
+</div>
+<!-- RIGHT PANE: Precision Spatial Radar & Interactive Map Canvas -->
+<div class="w-full lg:w-[55%] xl:w-[58%] relative min-h-[560px] lg:min-h-full bg-surface-container-lowest overflow-hidden flex items-center justify-center select-none" id="map-viewport">
+<!-- Interactive Vector Map Canvas Stage -->
+<div class="absolute inset-0 w-full h-full transition-transform duration-500 origin-center scale-100" id="map-stage">
+<!-- Styled SVG Dark Basemap with Detailed Indore Corridors & Radar System -->
+<svg class="w-full h-full" id="indore-map-svg" preserveAspectRatio="xMidYMid slice" viewBox="0 0 1000 750" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="routeGlowGrad" x1="0%" x2="100%" y1="100%" y2="0%">
+<stop offset="0%" stop-color="#44e2b1" stop-opacity="0.95"></stop>
+<stop offset="100%" stop-color="#f6c162" stop-opacity="1"></stop>
+</linearGradient>
+<radialGradient cx="50%" cy="50%" id="centerSweepRadial" r="50%">
+<stop offset="0%" stop-color="#44e2b1" stop-opacity="0.18"></stop>
+<stop offset="70%" stop-color="#44e2b1" stop-opacity="0.04"></stop>
+<stop offset="100%" stop-color="#121416" stop-opacity="0"></stop>
+</radialGradient>
+<pattern height="40" id="gridFine" patternUnits="userSpaceOnUse" width="40">
+<path d="M 40 0 L 0 0 0 40" fill="none" stroke="#282a2c" stroke-opacity="0.6" stroke-width="0.7"></path>
+</pattern>
+<filter height="140%" id="neonGlow" width="140%" x="-20%" y="-20%">
+<feGaussianBlur result="blur" stdDeviation="4"></feGaussianBlur>
+<feComposite in="SourceGraphic" in2="blur" operator="over"></feComposite>
+</filter>
+</defs>
+<!-- Base Ground & Grid -->
+<rect fill="#0c0e10" height="750" width="1000"></rect>
+<rect fill="url(#gridFine)" height="750" width="1000"></rect>
+<!-- Subdued Secondary Arterials -->
+<g fill="none" stroke="#1e2022" stroke-width="2.5">
+<!-- Ring Road South-East Arc -->
+<path d="M 80 680 Q 300 640 500 560 T 920 450"></path>
+<!-- Super Corridor Diagonal Spur -->
+<path d="M 120 180 L 380 320 L 520 420" stroke-dasharray="3 3"></path>
+<!-- Khajrana Bypass Link -->
+<path d="M 520 300 L 720 220 L 890 280"></path>
+<path d="M 280 620 L 360 480 L 440 280"></path>
+<path d="M 640 120 L 680 360 L 760 620"></path>
+</g>
+<!-- Major Expressways & National Arterials (Glowing Dark Gold/Grey) -->
+<g fill="none" stroke="#333537" stroke-linecap="round">
+<!-- AB Road (North-South Spine) -->
+<path d="M 460 40 L 410 240 L 330 460 L 260 710" stroke-width="5"></path>
+<!-- MR-10 Transversal Highway -->
+<path d="M 120 280 Q 450 250 880 200" stroke="#43474c" stroke-width="6"></path>
+<!-- Indore Bypass Outer Expressway -->
+<path d="M 720 60 Q 740 210 680 430 T 580 730" stroke="#43474c" stroke-width="6"></path>
+<!-- Palasia Cross Roads -->
+<path d="M 240 450 L 540 430" stroke-width="4"></path>
+</g>
+<!-- Road Labels in clean architectural typography -->
+<g fill="#9b8f7d" font-family="Manrope, sans-serif" font-size="9" letter-spacing="2" opacity="0.8">
+<text transform="rotate(78 690 160)" x="690" y="160">INDORE BYPASS EXPRESSWAY</text>
+<text transform="rotate(-6 360 240)" x="360" y="240">MR-10 METRO CORRIDOR</text>
+<text transform="rotate(-70 355 490)" x="355" y="490">A.B. ROAD ARTERIAL</text>
+<text x="210" y="470">PALASIA RING</text>
+<text x="760" y="280">VIJAY NAGAR SEC-78</text>
+<text x="140" y="140">SUPER CORRIDOR AIRPORT LINK</text>
+</g>
+<!-- RADAR CONCENTRIC RINGS & SYSTEM OVERLAY (Centered at User GPS X:320, Y:410) -->
+<g>
+<!-- Outer Distance Radar Bands -->
+<circle cx="320" cy="410" fill="none" r="100" stroke="#44e2b1" stroke-dasharray="2 6" stroke-opacity="0.3" stroke-width="1"></circle>
+<circle cx="320" cy="410" fill="none" r="190" stroke="#4f4537" stroke-opacity="0.35" stroke-width="1"></circle>
+<circle cx="320" cy="410" fill="none" r="300" stroke="#4f4537" stroke-dasharray="4 8" stroke-opacity="0.2" stroke-width="1"></circle>
+<circle cx="320" cy="410" fill="none" r="420" stroke="#4f4537" stroke-opacity="0.15" stroke-width="0.8"></circle>
+<!-- Coordinate Crosshair Lines -->
+<line stroke="#44e2b1" stroke-dasharray="2 4" stroke-opacity="0.25" stroke-width="0.8" x1="20" x2="620" y1="410" y2="410"></line>
+<line stroke="#44e2b1" stroke-dasharray="2 4" stroke-opacity="0.25" stroke-width="0.8" x1="320" x2="320" y1="100" y2="720"></line>
+<!-- Radar Sweep Fan (Animated) -->
+<path class="animate-radar-sweep" d="M 320 410 L 590 280 A 320 320 0 0 0 320 90 Z" fill="url(#centerSweepRadial)"></path>
+</g>
+<!-- DYNAMIC CONNECTIVITY / ACTIVE ROUTE PATH (User to Phoenix Citadel by default) -->
+<path class="route-flow" d="M 320 410 Q 420 370 480 320 T 670 210" fill="none" filter="url(#neonGlow)" id="active-route-line" stroke="url(#routeGlowGrad)" stroke-linecap="round" stroke-width="4.5"></path>
+<!-- Secondary Guideway Connectors (Faint) -->
+<path d="M 320 410 Q 370 340 430 290" fill="none" opacity="0.4" stroke="#44e2b1" stroke-dasharray="3 5" stroke-width="1.5"></path>
+<path d="M 320 410 Q 280 430 260 480" fill="none" opacity="0.4" stroke="#44e2b1" stroke-dasharray="3 5" stroke-width="1.5"></path>
+<path d="M 320 410 Q 340 400 370 415" fill="none" opacity="0.4" stroke="#44e2b1" stroke-dasharray="3 5" stroke-width="1.5"></path>
+</svg>
+<!-- INTERACTIVE MAP PINS (Pointers & Floating Badges with Full Bidirectional Action) -->
+<!-- PIN 1: Phoenix Citadel (Bypass Road) -->
+<div class="map-hub-pin absolute left-[67%] top-[28%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center group cursor-pointer" id="pin-citadel" onclick="selectHub('citadel')">
+<div class="pin-badge flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-low/95 text-on-surface backdrop-blur-md transition-transform group-hover:scale-110 border border-primary shadow-[0_0_24px_rgba(246,193,98,0.45)] border-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-headline-sm text-body-sm font-bold tracking-tight text-on-surface">Phoenix Citadel</span>
+<span class="font-data-mono text-body-sm text-primary font-bold">45 Free</span>
+<span class="text-on-surface-variant font-data-mono text-body-sm">· <span class="pin-price">₹50</span></span>
+</div>
+<div class="pin-marker w-7 h-7 -mt-1 rounded-full flex items-center justify-center font-bold text-xs bg-primary text-on-primary ring-4 ring-primary/20 shadow-[0_0_15px_#f6c162]">
+<span class="material-symbols-outlined text-[17px]">local_parking</span>
+</div>
+</div>
+<!-- PIN 2: Brilliant Convention Centre (Vijay Nagar) -->
+<div class="map-hub-pin absolute left-[43%] top-[38%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center group cursor-pointer" id="pin-brilliant" onclick="selectHub('brilliant')">
+<div class="pin-badge flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest/90 border border-outline-variant/60 backdrop-blur-md text-on-surface transition-transform group-hover:scale-110 shadow-lg">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span class="font-label-md text-body-sm font-semibold text-on-surface">Brilliant CC</span>
+<span class="font-data-mono text-body-sm text-tertiary font-bold">28 Free</span>
+<span class="text-on-surface-variant font-data-mono text-body-sm">· <span class="pin-price">₹40</span></span>
+</div>
+<div class="pin-marker w-6 h-6 -mt-1 rounded-full bg-surface-container-high border border-tertiary/70 text-tertiary flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined text-[14px]">local_parking</span>
+</div>
+</div>
+<!-- PIN 3: 56 Dukan (Palasia) -->
+<div class="map-hub-pin absolute left-[26%] top-[64%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center group cursor-pointer" id="pin-dukan" onclick="selectHub('dukan')">
+<div class="pin-badge flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest/90 border border-outline-variant/60 backdrop-blur-md text-on-surface transition-transform group-hover:scale-110 shadow-lg">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-label-md text-body-sm font-semibold text-on-surface">56 Dukan</span>
+<span class="font-data-mono text-body-sm text-primary font-bold">12 Free</span>
+<span class="text-on-surface-variant font-data-mono text-body-sm">· <span class="pin-price">₹35</span></span>
+</div>
+<div class="pin-marker w-6 h-6 -mt-1 rounded-full bg-surface-container-high border border-primary/70 text-primary flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined text-[14px]">local_parking</span>
+</div>
+</div>
+<!-- PIN 4: Holkar Stadium Arena (New Palasia) -->
+<div class="map-hub-pin absolute left-[37%] top-[55%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center group cursor-pointer" id="pin-holkar" onclick="selectHub('holkar')">
+<div class="pin-badge flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container-lowest/90 border border-error/50 backdrop-blur-md text-on-surface transition-transform group-hover:scale-110 shadow-lg border-outline-variant/60">
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+<span class="font-label-md text-body-sm font-semibold text-on-surface">Holkar Arena</span>
+<span class="font-data-mono text-body-sm text-error font-bold">60 Free</span>
+<span class="text-on-surface-variant font-data-mono text-body-sm">· <span class="pin-price">₹80</span></span>
+</div>
+<div class="pin-marker w-6 h-6 -mt-1 rounded-full bg-surface-container-high border border-error/70 text-error flex items-center justify-center shadow-md">
+<span class="material-symbols-outlined text-[14px]">stadium</span>
+</div>
+</div>
+<!-- Live GPS Marker (User Vehicle Position at 22.7196° N, 75.8577° E) -->
+<div class="absolute left-[32%] top-[54%] -translate-x-1/2 -translate-y-1/2 z-30 flex flex-col items-center pointer-events-none" id="user-location-pin">
+<div class="px-2.5 py-0.5 rounded-full bg-surface-container-lowest/95 border border-tertiary text-tertiary font-data-mono text-[10px] tracking-wider uppercase font-bold mb-1 shadow-[0_0_12px_rgba(68,226,177,0.4)] flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-ping"></span>
+              YOUR LOCATION (MP-09)
+            </div>
+<div class="relative flex items-center justify-center">
+<span class="w-4 h-4 rounded-full bg-tertiary shadow-[0_0_16px_#44e2b1] ring-2 ring-surface"></span>
+<span class="absolute w-8 h-8 rounded-full border border-tertiary/60 animate-ping"></span>
+<span class="absolute w-12 h-12 rounded-full border border-tertiary/20"></span>
+</div>
+</div>
+</div>
+<!-- HUD STATUS INDICATOR: Floating Top Left -->
+<div class="absolute top-space-md left-space-md z-30 flex items-center gap-space-sm px-space-md py-2 rounded-xl bg-surface-container-lowest/90 border border-outline-variant/40 backdrop-blur-md shadow-xl">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-tertiary animate-pulse"></span>
+<span class="font-data-mono text-body-sm text-on-surface uppercase font-bold" id="radar-mode-tag">RADAR: ACTIVE</span>
+</div>
+<span class="text-outline-variant">|</span>
+<span class="font-data-mono text-body-sm text-primary">TRAFFIC: OPTIMAL (24 km/h)</span>
+<span class="hidden sm:inline text-outline-variant">|</span>
+<span class="hidden sm:inline font-data-mono text-[11px] text-on-surface-variant">22.7196° N, 75.8577° E</span>
+</div>
+<!-- HUD MAP CONTROLS: Floating Upper Right -->
+<div class="absolute top-space-md right-space-md z-30 flex flex-col gap-2">
+<!-- Recenter GPS button -->
+<button aria-label="Recenter Map" class="w-10 h-10 rounded-xl bg-surface-container-lowest/90 border border-outline-variant/40 backdrop-blur-md hover:bg-surface-container text-on-surface flex items-center justify-center shadow-xl transition-transform active:scale-95 group" onclick="recenterGPS()" title="Recenter on your vehicle">
+<span class="material-symbols-outlined text-[20px] text-tertiary group-hover:rotate-45 transition-transform">near_me</span>
+</button>
+<!-- Map Layers Toggle -->
+<div class="relative">
+<button aria-label="Map Layers" class="w-10 h-10 rounded-xl bg-surface-container-lowest/90 border border-outline-variant/40 backdrop-blur-md hover:bg-surface-container text-on-surface flex items-center justify-center shadow-xl transition-all" id="layer-btn" onclick="cycleMapLayer()" title="Switch layer modes">
+<span class="material-symbols-outlined text-[20px] text-primary">layers</span>
+</button>
+<span class="hidden absolute right-12 top-2 px-2 py-0.5 rounded bg-surface-container-high border border-outline-variant text-[10px] font-label-caps uppercase text-on-surface whitespace-nowrap" id="layer-tooltip">Radar Mode</span>
+</div>
+<!-- Zoom Controls with Real Canvas Scale Response -->
+<div class="flex flex-col rounded-xl bg-surface-container-lowest/90 border border-outline-variant/40 backdrop-blur-md overflow-hidden shadow-xl">
+<button aria-label="Zoom In" class="w-10 h-10 hover:bg-surface-container text-on-surface flex items-center justify-center transition-colors" onclick="zoomMap(0.15)" title="Zoom in">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+<div class="w-6 mx-auto h-[1px] bg-outline-variant/30"></div>
+<button aria-label="Zoom Out" class="w-10 h-10 hover:bg-surface-container text-on-surface flex items-center justify-center transition-colors" onclick="zoomMap(-0.15)" title="Zoom out">
+<span class="material-symbols-outlined text-[20px]">remove</span>
+</button>
+</div>
+</div>
+<!-- HUD FLOATING INGRESS DRAWER / QUICK PASS PREVIEW: Floating Bottom Center -->
+<div class="absolute bottom-space-md left-space-md right-space-md sm:left-auto sm:right-space-md sm:w-[430px] z-30 transition-all duration-300" id="floating-hud-drawer">
+<div class="flex flex-col p-space-md rounded-2xl bg-surface-container-lowest/95 border border-primary-container/40 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.8)]">
+<div class="flex items-center justify-between gap-space-xs mb-2">
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-primary text-on-primary font-label-caps text-[10px] uppercase font-bold" id="hud-routing-badge">Fast Routing</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase font-semibold" id="hud-target-index">Target Deck #01</span>
+</div>
+<span class="font-data-mono text-headline-sm text-tertiary font-bold" id="hud-eta">3 min ETA</span>
+</div>
+<div class="flex items-start justify-between gap-space-sm mb-space-sm">
+<div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-bold" id="hud-title">Phoenix Citadel Grand Deck</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant" id="hud-address">MR-10 Junction, Bypass Rd, Indore</p>
+</div>
+</div>
+<!-- Progress Ingress Ring / Mini Data Stats -->
+<div class="grid grid-cols-2 gap-2 py-2 px-3 rounded-xl bg-surface-container-low border border-outline-variant/30 mb-space-sm">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[18px]">ev_station</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Recommended Bay</span>
+<span class="font-data-mono text-body-sm text-on-surface font-bold" id="hud-slot-text">Bay B-14 (60kW EV)</span>
+</div>
+</div>
+<div class="flex flex-col text-right justify-center border-l border-outline-variant/30 pl-2">
+<span class="font-label-caps text-[10px] text-on-surface-variant uppercase">Parking Rate</span>
+<span class="font-data-mono text-body-sm text-primary font-bold" id="hud-price">₹50 / hr</span>
+</div>
+</div>
+<!-- Action Buttons inside Floating HUD Card -->
+<div class="flex items-center gap-2">
+<button class="flex-1 py-2.5 px-4 rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold text-center transition-all shadow-[0_0_20px_rgba(216,166,74,0.3)]" onclick="openBayModal(currentSelectedHub)">
+                Open 3D Bay Visualizer
+              </button>
+<button class="py-2.5 px-4 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors flex items-center gap-1.5 border border-outline-variant/40" onclick="openPassDrawer(currentSelectedHub)">
+<span class="material-symbols-outlined text-[16px] text-primary">qr_code_2</span>
+<span class="">Express Pass</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- INTERACTIVE MODAL 1: 3D BAY VISUALIZER & LIVE ALLOCATION -->
+<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4" id="bay-modal">
+<div class="bg-surface-container-lowest border border-primary-container/60 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+<div class="flex items-start justify-between border-b border-outline-variant/40 pb-4">
+<div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-0.5 rounded bg-primary text-on-primary font-label-caps text-[10px] uppercase font-bold">Level P3 Spatial Simulation</span>
+<span class="font-data-mono text-body-sm text-tertiary">Grid Sync: OK</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface font-bold mt-1" id="modal-deck-title">Phoenix Citadel Grand Deck</h3>
+<p class="font-body-sm text-on-surface-variant">Tap any available bay below to allocate slot for autonomous docking or valet drop-off.</p>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface flex items-center justify-center" onclick="closeBayModal()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Bay Floor Simulation Interactive Matrix -->
+<div class="flex flex-col gap-3 py-2">
+<div class="flex items-center justify-between text-xs text-on-surface-variant font-label-caps">
+<span class="">AISLE NORTH • RAPID CHARGE ZONE</span>
+<div class="flex items-center gap-3">
+<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-surface-container-highest border border-outline-variant"></span> Occupied</span>
+<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-tertiary/20 border border-tertiary text-tertiary"></span> Available</span>
+<span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-primary text-on-primary font-bold"></span> Selected</span>
+</div>
+</div>
+<div class="grid grid-cols-6 gap-2.5 p-4 rounded-xl bg-surface-container-low border border-outline-variant/30 text-center font-data-mono text-xs">
+<!-- Row 1 -->
+<button class="bay-tile p-2.5 rounded-lg border border-outline-variant/40 bg-surface-container-highest text-on-surface-variant/40 cursor-not-allowed" onclick="pickBay(this, 'Bay P3-11')">
+          P3-11<br><span class="text-[9px]">BUSY</span>
+</button>
+<button class="bay-tile p-2.5 rounded-lg border border-tertiary/70 bg-tertiary/10 text-tertiary hover:bg-tertiary/20 font-bold transition-all" onclick="pickBay(this, 'Bay P3-12 (60kW EV)')">
+          P3-12<br><span class="text-[9px]">⚡ 60kW</span>
+</button>
+<button class="bay-tile p-2.5 rounded-lg border border-tertiary/70 bg-tertiary/10 text-tertiary hover:bg-tertiary/20 font-bold transition-all" onclick="pickBay(this, 'Bay P3-13')">
+          P3-13<br><span class="text-[9px]">FREE</span>
+</button>
+<button class="bay-tile p-2.5 rounded-lg border-2 border-primary bg-primary text-on-primary font-bold shadow-[0_0_12px_#f6c162]" onclick="pickBay(this, 'Bay P3-14')">
+          P3-14<br><span class="text-[9px]">RECOMMENDED</span>
+</button>
+<button class="bay-tile p-2.5 rounded-lg border border-outline-variant/40 bg-surface-container-highest text-on-surface-variant/40 cursor-not-allowed" onclick="pickBay(this, 'Bay P3-15')">
+          P3-15<br><span class="text-[9px]">BUSY</span>
+</button>
+<button class="bay-tile p-2.5 rounded-lg border border-tertiary/70 bg-tertiary/10 text-tertiary hover:bg-tertiary/20 font-bold transition-all" onclick="pickBay(this, 'Bay P3-16')">
+          P3-16<br><span class="text-[9px]">FREE</span>
+</button>
+<!-- Row 2 -->
+<button class="bay-tile p-2.5 rounded-lg border border-tertiary/70 bg-tertiary/10 text-tertiary hover:bg-tertiary/20 font-bold transition-all" onclick="pickBay(this, 'Bay P3-21')">
+          P3-21<br><span class="text-[9px]">FREE</span>
+</button>
+<button class="bay-tile p-2.5 rounded-lg border border-outline-variant/40 bg-surface-container-highest text-on-surface-variant/40 cursor-not-allowed" onclick="pickBay(this, 'Bay P3-22')">
+          P3-22<br><span class="text-[9px]">BUSY</span>
+</button>
+<button class="bay-tile p-2.5 rounded-lg border border-tertiary/70 bg-tertiary/10 text-tertiary hover:bg-tertiary/20 font-bold transition-all" onclick="pickBay(this, 'Bay P3-23')">
+          P3-23<br><span class="text-[9px]">FREE</span>
+</button>
+<button class="bay-tile p-2.5 rounded-lg border border-tertiary/70 bg-tertiary/10 text-tertiary hover:bg-tertiary/20 font-bold transition-all" onclick="pickBay(this, 'Bay P3-24 (Valet Lock)')">
+          P3-24<br><span class="text-[9px]">VALET</span>
+</button>
+<button class="bay-tile p-2.5 rounded-lg border border-outline-variant/40 bg-surface-container-highest text-on-surface-variant/40 cursor-not-allowed" onclick="pickBay(this, 'Bay P3-25')">
+          P3-25<br><span class="text-[9px]">BUSY</span>
+</button>
+<button class="bay-tile p-2.5 rounded-lg border border-tertiary/70 bg-tertiary/10 text-tertiary hover:bg-tertiary/20 font-bold transition-all" onclick="pickBay(this, 'Bay P3-26 (120kW EV)')">
+          P3-26<br><span class="text-[9px]">⚡ 120kW</span>
+</button>
+</div>
+<div class="flex items-center justify-between p-3 rounded-lg bg-surface-container">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">verified_user</span>
+<span class="text-sm font-body-md text-on-surface">Selected: <strong class="text-primary font-data-mono" id="selected-bay-name">Bay P3-14 (Recommended EV)</strong></span>
+</div>
+<span class="font-data-mono text-tertiary text-xs">ANPR Barrier Autolinked</span>
+</div>
+</div>
+<div class="flex items-center justify-end gap-3 pt-3 border-t border-outline-variant/40">
+<button class="px-4 py-2 rounded-full text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" onclick="closeBayModal()">Cancel</button>
+<button class="px-6 py-2 rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-bold shadow-[0_0_16px_rgba(216,166,74,0.3)] transition-all" onclick="confirmBayAllocation()">
+        Confirm Bay Reservation
+      </button>
+</div>
+</div>
+</div>
+<!-- INTERACTIVE MODAL 2: EXPRESS PASS DRAWER -->
+<div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4" id="pass-drawer">
+<div class="bg-surface-container-lowest border border-primary/50 rounded-2xl max-w-md w-full p-6 shadow-2xl relative flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-200">
+<div class="flex items-center justify-between border-b border-outline-variant/40 pb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">qr_code_2</span>
+<span class="font-label-caps text-label-caps uppercase text-primary font-bold">Space2Park Express Pass</span>
+</div>
+<button class="w-8 h-8 rounded-full bg-surface-container text-on-surface-variant hover:text-on-surface flex items-center justify-center" onclick="closePassDrawer()">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Pass QR Token Card -->
+<div class="flex flex-col items-center justify-center p-6 rounded-xl bg-surface-container-low border border-primary-container/40 text-center gap-3">
+<!-- Simulated High-Tech QR Code SVG -->
+<div class="p-3 bg-white rounded-xl shadow-lg">
+<svg fill="#121416" height="150" viewBox="0 0 100 100" width="150">
+<rect fill="#121416" height="30" width="30" x="0" y="0"></rect>
+<rect fill="#ffffff" height="20" width="20" x="5" y="5"></rect>
+<rect fill="#121416" height="10" width="10" x="10" y="10"></rect>
+<rect fill="#121416" height="30" width="30" x="70" y="0"></rect>
+<rect fill="#ffffff" height="20" width="20" x="75" y="5"></rect>
+<rect fill="#121416" height="10" width="10" x="80" y="10"></rect>
+<rect fill="#121416" height="30" width="30" x="0" y="70"></rect>
+<rect fill="#ffffff" height="20" width="20" x="5" y="75"></rect>
+<rect fill="#121416" height="10" width="10" x="10" y="80"></rect>
+<!-- Data blocks -->
+<rect height="8" width="8" x="36" y="8"></rect>
+<rect height="8" width="8" x="48" y="14"></rect>
+<rect height="6" width="12" x="38" y="26"></rect>
+<rect height="8" width="8" x="12" y="44"></rect>
+<rect height="14" width="8" x="24" y="38"></rect>
+<rect height="16" width="16" x="42" y="42"></rect>
+<rect height="8" width="12" x="68" y="40"></rect>
+<rect height="10" width="10" x="84" y="44"></rect>
+<rect height="10" width="10" x="38" y="68"></rect>
+<rect height="14" width="8" x="54" y="74"></rect>
+<rect height="8" width="16" x="72" y="66"></rect>
+<rect height="12" width="12" x="80" y="82"></rect>
+</svg>
+</div>
+<div class="flex flex-col gap-0.5">
+<span class="font-headline-sm text-body-lg text-on-surface font-bold" id="pass-modal-deck">Phoenix Citadel Grand Deck</span>
+<span class="font-data-mono text-xs text-primary font-semibold" id="pass-modal-token">TOKEN: MP09-S2P-8831</span>
+<span class="font-data-mono text-[11px] text-tertiary">ANPR Automatic Barrier Ingress</span>
+</div>
+<div class="grid grid-cols-2 gap-2 w-full pt-2 text-left font-data-mono text-xs bg-surface-container p-2.5 rounded-lg">
+<div>
+<span class="text-[10px] text-on-surface-variant uppercase block">Vehicle</span>
+<span class="text-on-surface font-bold" id="pass-vehicle-label">Car / SUV</span>
+</div>
+<div>
+<span class="text-[10px] text-on-surface-variant uppercase block">Rate Locked</span>
+<span class="text-primary font-bold" id="pass-rate-label">₹50/hr</span>
+</div>
+</div>
+</div>
+<button class="w-full py-2.5 rounded-full bg-primary hover:bg-primary-fixed text-on-primary font-label-md text-label-md font-bold transition-all shadow-md" onclick="downloadPass()">
+      Add to Apple / Google Wallet
+    </button>
+</div>
+</div>
+<!-- TOAST ALERT -->
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-surface-container-high border border-primary/50 text-on-surface px-4 py-2.5 rounded-full shadow-2xl text-xs font-label-md flex items-center gap-2 pointer-events-none transition-opacity duration-300 opacity-0" id="toast">
+<span class="w-2 h-2 rounded-full bg-tertiary"></span>
+<span id="toast-text" class="">Navigating to Phoenix Citadel Grand Deck (3 min ETA)</span>
+</div>
+<!-- FOOTER -->
+<footer class="w-full bg-surface-container-lowest border-t border-primary-container/30 pt-space-xl pb-space-lg">
+<div class="w-full px-margin-mobile md:px-margin">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-space-xl mb-space-xl">
+<div class="lg:col-span-2 flex flex-col gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="h-9 w-auto"><img src="https://lh3.googleusercontent.com/aida/AEtjO1WVIpU8vsFpP1VicbQOLikz4kLds83kupaD5stKKZ5lYGKAU7D1UnnMBnz6BQXHJa-BFWPXX5i4o7kRL5sxDyuuQPyNO_LuRLJmd9oO6GLmUv6z7i3fo8L4Kna79KsAVyrFJ3fqUDFwL077qMTagg8qITymkxsd1EaFTzotPG5seb9prbfPgrIXxTRIfh7zYoBCmpEu94phbnb8WyBT738fA8-z9OnDQBmIWWPjTzJFPn-4SRvM6XxF-Q" alt="Space2Park Logo" class="h-9 w-auto object-contain"></div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-sm">Park Smart. Arrive Easy. The premier intelligent mobility &amp; charging network for autonomous and luxury vehicular transit across Indore metropolitan corridors.</p>
+<div class="mt-space-xs inline-flex items-center gap-space-xs px-space-sm py-space-xs rounded-full border border-tertiary-container/30 bg-tertiary-container/10 w-fit">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+<span class="font-label-caps text-label-caps text-tertiary uppercase">Indore Pilot Grid Active • 1,420+ Live Bays</span>
+</div>
+</div>
+<div class="flex flex-col gap-space-sm">
+<span class="font-label-caps text-label-caps text-on-surface uppercase tracking-widest">Platform</span>
+<nav class="flex flex-col gap-space-xs">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="find-parking" href="#">Find Parking</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onclick="openBayModal('citadel')">Detail &amp; 3D Bay</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer" onclick="openPassDrawer('citadel')">Booking Pass &amp; HUD</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="events" href="#">Events</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="list-your-space" href="#">List Your Space</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" data-path="how-it-works" href="#">How It Works</a>
+</nav>
+</div>
+<div class="flex flex-col gap-space-sm">
+<span class="font-label-caps text-label-caps text-on-surface uppercase tracking-widest">Company</span>
+<nav class="flex flex-col gap-space-xs">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">About</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Contact</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Indore Pilot</a>
+</nav>
+</div>
+<div class="flex flex-col gap-space-sm">
+<span class="font-label-caps text-label-caps text-on-surface uppercase tracking-widest">Legal &amp; Trust</span>
+<nav class="flex flex-col gap-space-xs">
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Privacy Policy</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Terms of Service</a>
+<a class="font-body-sm text-body-sm text-on-surface-variant hover:text-on-surface transition-colors" href="#">Security &amp; EV Compliance</a>
+</nav>
+</div>
+</div>
+<div class="pt-space-lg border-t border-outline-variant/40 flex flex-col sm:flex-row items-center justify-between gap-space-md text-on-surface-variant font-body-sm text-body-sm">
+<span class="">© 2026 Space2Park Technologies Inc. All rights reserved.</span>
+<div class="flex items-center gap-space-md">
+<span class="font-data-mono text-data-mono text-primary-container text-xs">SYS.VER 4.4.0-DISCOVERY-SUITE</span>
+</div>
+</div>
+</div>
+</footer>
+<!-- COMPLETE INTERACTION & BIDIRECTIONAL ENGINE SCRIPT -->
+<script>
+  // Hubs Metadata Repository
+  const HUBS_DATA = {
+    'citadel': {
+      title: 'Phoenix Citadel Grand Deck',
+      address: 'MR-10 Junction, Bypass Rd, Indore',
+      eta: '3 min ETA',
+      carPrice: '₹50',
+      bikePrice: '₹20',
+      carBays: '45 / 120 (38%)',
+      bikeBays: '72 Free',
+      slotRec: 'Bay B-14 (60kW EV)',
+      targetIdx: 'Target Deck #01',
+      coords: { x: 670, y: 210, pinId: 'pin-citadel' },
+      routeD: 'M 320 410 Q 420 370 480 320 T 670 210'
+    },
+    'brilliant': {
+      title: 'Brilliant Convention Centre',
+      address: 'Scheme 78, Vijay Nagar, Indore',
+      eta: '5 min ETA',
+      carPrice: '₹40',
+      bikePrice: '₹15',
+      carBays: '28 / 80 Free',
+      bikeBays: '110 Spots',
+      slotRec: 'Bay B2-08 (Covered)',
+      targetIdx: 'Target Deck #02',
+      coords: { x: 430, y: 290, pinId: 'pin-brilliant' },
+      routeD: 'M 320 410 Q 370 340 430 290'
+    },
+    'dukan': {
+      title: '56 Dukan Culinary Multi-Deck',
+      address: '56 Shops Arcade, New Palasia',
+      eta: '8 min ETA',
+      carPrice: '₹35',
+      bikePrice: '₹10',
+      carBays: '12 / 60 Free',
+      bikeBays: '85 Spots',
+      slotRec: 'Lift Deck L-04',
+      targetIdx: 'Target Deck #03',
+      coords: { x: 260, y: 480, pinId: 'pin-dukan' },
+      routeD: 'M 320 410 Q 280 430 260 480'
+    },
+    'holkar': {
+      title: 'Holkar Stadium VIP & General Ring',
+      address: 'Race Course Road, New Palasia',
+      eta: '11 min ETA',
+      carPrice: '₹80',
+      bikePrice: '₹30',
+      carBays: '60 / 250 Free',
+      bikeBays: '140 Spots',
+      slotRec: 'Gate 4 VIP Sector',
+      targetIdx: 'Target Deck #04',
+      coords: { x: 370, y: 415, pinId: 'pin-holkar' },
+      routeD: 'M 320 410 Q 340 400 370 415'
+    }
+  };
+
+  let currentSelectedHub = 'citadel';
+  let currentVehicleMode = 'car';
+  let currentMapScale = 1.0;
+  let currentMapLayerIndex = 0;
+  const mapLayers = ['Radar Mode', 'Road Grid', 'Night Satellite'];
+
+  // 1. SELECT HUB (Bidirectional Map & List Sync)
+  window.selectHub = function(hubId) {
+    if (!HUBS_DATA[hubId]) return;
+    currentSelectedHub = hubId;
+    const hub = HUBS_DATA[hubId];
+
+    // Update List Cards
+    document.querySelectorAll('.hub-card').forEach(card => {
+      card.classList.remove('border-primary', 'shadow-[0_0_24px_rgba(216,166,74,0.18)]');
+      card.classList.add('border-transparent');
+      const bStatus = card.querySelector('.badge-status');
+      if (bStatus) bStatus.classList.add('hidden');
+    });
+
+    const activeCard = document.getElementById(`card-${hubId}`);
+    if (activeCard) {
+      activeCard.classList.remove('border-transparent');
+      activeCard.classList.add('border-primary', 'shadow-[0_0_24px_rgba(216,166,74,0.18)]');
+      const bStatus = activeCard.querySelector('.badge-status');
+      if (bStatus) bStatus.classList.remove('hidden');
+    }
+
+    // Update Route Path in SVG
+    const routeLine = document.getElementById('active-route-line');
+    if (routeLine && hub.routeD) {
+      routeLine.setAttribute('d', hub.routeD);
+    }
+
+    // Update Map Pin Highlights
+    document.querySelectorAll('.map-hub-pin').forEach(pin => {
+      const badge = pin.querySelector('.pin-badge');
+      const marker = pin.querySelector('.pin-marker');
+      if (badge) {
+        badge.classList.remove('border-primary', 'shadow-[0_0_24px_rgba(246,193,98,0.45)]', 'border-2');
+        badge.classList.add('border-outline-variant/60', 'border');
+      }
+      if (marker) {
+        marker.classList.remove('bg-primary', 'text-on-primary', 'ring-4', 'ring-primary/20', 'shadow-[0_0_15px_#f6c162]');
+      }
+    });
+
+    const activePin = document.getElementById(`pin-${hubId}`);
+    if (activePin) {
+      const activeBadge = activePin.querySelector('.pin-badge');
+      const activeMarker = activePin.querySelector('.pin-marker');
+      if (activeBadge) {
+        activeBadge.classList.add('border-primary', 'shadow-[0_0_24px_rgba(246,193,98,0.45)]', 'border-2');
+        activeBadge.classList.remove('border-outline-variant/60');
+      }
+      if (activeMarker) {
+        activeMarker.classList.add('bg-primary', 'text-on-primary', 'ring-4', 'ring-primary/20', 'shadow-[0_0_15px_#f6c162]');
+      }
+    }
+
+    // Update Bottom Floating HUD Drawer
+    document.getElementById('hud-title').innerText = hub.title;
+    document.getElementById('hud-address').innerText = hub.address;
+    document.getElementById('hud-eta').innerText = hub.eta;
+    document.getElementById('hud-target-index').innerText = hub.targetIdx;
+    document.getElementById('hud-slot-text').innerText = hub.slotRec;
+    const priceText = currentVehicleMode === 'car' ? hub.carPrice : hub.bikePrice;
+    document.getElementById('hud-price').innerText = `${priceText} / hr`;
+
+    showToast(`Navigating to ${hub.title} (${hub.eta})`);
+  };
+
+  // 2. VEHICLE MODE TOGGLE
+  window.setVehicleMode = function(mode) {
+    currentVehicleMode = mode;
+    const btnCar = document.getElementById('btn-car-mode');
+    const btnBike = document.getElementById('btn-bike-mode');
+    const navBtnCar = document.getElementById('nav-btn-car');
+    const navBtnBike = document.getElementById('nav-btn-bike');
+
+    if (mode === 'car') {
+      btnCar.className = 'flex items-center gap-1.5 px-space-md py-1.5 rounded-full bg-primary-container text-on-primary font-label-caps text-label-caps transition-all shadow-sm';
+      btnBike.className = 'flex items-center gap-1.5 px-space-md py-1.5 rounded-full text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps transition-all';
+      if (navBtnCar) navBtnCar.className = 'px-2 py-0.5 rounded-full bg-primary-container text-on-primary font-label-caps text-[10px] uppercase font-bold transition-all';
+      if (navBtnBike) navBtnBike.className = 'px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface font-label-caps text-[10px] uppercase transition-all';
+    } else {
+      btnBike.className = 'flex items-center gap-1.5 px-space-md py-1.5 rounded-full bg-primary-container text-on-primary font-label-caps text-label-caps transition-all shadow-sm';
+      btnCar.className = 'flex items-center gap-1.5 px-space-md py-1.5 rounded-full text-on-surface-variant hover:text-on-surface font-label-caps text-label-caps transition-all';
+      if (navBtnBike) navBtnBike.className = 'px-2 py-0.5 rounded-full bg-primary-container text-on-primary font-label-caps text-[10px] uppercase font-bold transition-all';
+      if (navBtnCar) navBtnCar.className = 'px-2 py-0.5 rounded-full text-on-surface-variant hover:text-on-surface font-label-caps text-[10px] uppercase transition-all';
+    }
+
+    // Refresh Prices and Tags on Cards & Pins
+    Object.keys(HUBS_DATA).forEach(id => {
+      const card = document.getElementById(`card-${id}`);
+      const priceVal = mode === 'car' ? HUBS_DATA[id].carPrice : HUBS_DATA[id].bikePrice;
+      if (card) {
+        const pEl = card.querySelector('.price-val');
+        if (pEl) pEl.innerText = priceVal;
+      }
+      const pin = document.getElementById(`pin-${id}`);
+      if (pin) {
+        const pinPriceEl = pin.querySelector('.pin-price');
+        if (pinPriceEl) pinPriceEl.innerText = priceVal;
+      }
+    });
+
+    // Update Bottom HUD price
+    const currentPrice = mode === 'car' ? HUBS_DATA[currentSelectedHub].carPrice : HUBS_DATA[currentSelectedHub].bikePrice;
+    document.getElementById('hud-price').innerText = `${currentPrice} / hr`;
+
+    showToast(`Vehicle mode switched to: ${mode.toUpperCase()} (Rates Updated)`);
+  };
+
+  // 3. MAP CONTROLS: ZOOM, RECENTER & LAYER CYCLING
+  window.zoomMap = function(delta) {
+    currentMapScale = Math.min(Math.max(0.7, currentMapScale + delta), 1.8);
+    const stage = document.getElementById('map-stage');
+    if (stage) {
+      stage.style.transform = `scale(${currentMapScale})`;
+    }
+    showToast(`Grid Scale: ${Math.round(currentMapScale * 100)}%`);
+  };
+
+  window.recenterGPS = function() {
+    currentMapScale = 1.0;
+    const stage = document.getElementById('map-stage');
+    if (stage) {
+      stage.style.transform = `scale(1.0) translate(0px, 0px)`;
+    }
+    const gpsPin = document.getElementById('user-location-pin');
+    if (gpsPin) {
+      gpsPin.classList.add('scale-125');
+      setTimeout(() => gpsPin.classList.remove('scale-125'), 600);
+    }
+    showToast('GPS Lock: Centered on Vehicle (MR-10 Corridor)');
+  };
+
+  window.cycleMapLayer = function() {
+    currentMapLayerIndex = (currentMapLayerIndex + 1) % mapLayers.length;
+    const layerName = mapLayers[currentMapLayerIndex];
+    document.getElementById('radar-mode-tag').innerText = `${layerName.toUpperCase()}: ON`;
+    
+    const tip = document.getElementById('layer-tooltip');
+    tip.innerText = layerName;
+    tip.classList.remove('hidden');
+    setTimeout(() => tip.classList.add('hidden'), 1800);
+
+    const svg = document.getElementById('indore-map-svg');
+    if (currentMapLayerIndex === 1) {
+      svg.style.filter = 'contrast(1.2) brightness(0.9)';
+    } else if (currentMapLayerIndex === 2) {
+      svg.style.filter = 'hue-rotate(180deg) brightness(0.7)';
+    } else {
+      svg.style.filter = 'none';
+    }
+    showToast(`Layer Switched: ${layerName}`);
+  };
+
+  // 4. FILTERING & AREA TABS
+  window.filterByArea = function(area, btn) {
+    document.querySelectorAll('.area-btn').forEach(b => {
+      b.className = 'area-btn px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-caps text-label-caps tracking-wider uppercase transition-colors';
+    });
+    btn.className = 'area-btn px-3 py-1 rounded-full bg-primary text-on-primary font-label-caps text-label-caps tracking-wider uppercase font-semibold transition-all';
+
+    const cards = document.querySelectorAll('.hub-card');
+    let visibleCount = 0;
+    cards.forEach(card => {
+      const cardArea = card.getAttribute('data-area');
+      if (area === 'all' || cardArea === area || (area === 'bypass' && cardArea === 'bypass')) {
+        card.style.display = 'flex';
+        visibleCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+    document.getElementById('hubs-count-label').innerText = `${visibleCount} Hubs Active`;
+  };
+
+  window.toggleFilterTag = function(btn, feature) {
+    btn.classList.toggle('bg-primary-container/20');
+    btn.classList.toggle('text-primary');
+    btn.classList.toggle('border');
+    btn.classList.toggle('border-primary/40');
+    showToast(`Filter applied: ${btn.textContent.trim()}`);
+  };
+
+  window.resetAllFilters = function() {
+    document.querySelectorAll('.filter-pill').forEach(pill => {
+      pill.classList.remove('bg-primary-container/20', 'text-primary', 'border', 'border-primary/40');
+      pill.classList.add('bg-surface-container-high', 'text-on-surface');
+    });
+    document.querySelectorAll('.hub-card').forEach(c => c.style.display = 'flex');
+    document.getElementById('search-input').value = '';
+    document.getElementById('hubs-count-label').innerText = '4 Hubs Active';
+    showToast('Filters reset to default');
+  };
+
+  // Search Live Filtering
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      let matchCount = 0;
+      document.querySelectorAll('.hub-card').forEach(card => {
+        const text = card.innerText.toLowerCase();
+        if (text.includes(q)) {
+          card.style.display = 'flex';
+          matchCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      document.getElementById('hubs-count-label').innerText = `${matchCount} Hubs Active`;
+    });
+  }
+
+  // Sort Handler
+  window.handleSort = function(criteria) {
+    const stack = document.getElementById('cards-stack');
+    const cards = Array.from(document.querySelectorAll('.hub-card'));
+    if (criteria === 'price') {
+      cards.sort((a, b) => {
+        const pa = parseInt(a.querySelector('.price-val').innerText.replace(/\D/g, ''));
+        const pb = parseInt(b.querySelector('.price-val').innerText.replace(/\D/g, ''));
+        return pa - pb;
+      });
+    } else if (criteria === 'capacity') {
+      cards.reverse();
+    }
+    cards.forEach(c => stack.appendChild(c));
+    showToast(`Sorted by: ${criteria.toUpperCase()}`);
+  };
+
+  // Bookmark Toggle
+  window.toggleBookmark = function(btn) {
+    const icon = btn.querySelector('.material-symbols-outlined');
+    if (icon.innerText === 'bookmark_border') {
+      icon.innerText = 'bookmark';
+      btn.classList.add('text-primary');
+      showToast('Deck saved to your favorites');
+    } else {
+      icon.innerText = 'bookmark_border';
+      btn.classList.remove('text-primary');
+      showToast('Deck removed from favorites');
+    }
+  };
+
+  // 5. MODALS & PASS LOGIC
+  window.openBayModal = function(hubId) {
+    const modal = document.getElementById('bay-modal');
+    const hub = HUBS_DATA[hubId] || HUBS_DATA['citadel'];
+    document.getElementById('modal-deck-title').innerText = hub.title;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  };
+
+  window.closeBayModal = function() {
+    const modal = document.getElementById('bay-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  };
+
+  window.pickBay = function(btn, bayLabel) {
+    if (btn.classList.contains('cursor-not-allowed')) return;
+    document.querySelectorAll('.bay-tile').forEach(b => {
+      if (!b.classList.contains('cursor-not-allowed')) {
+        b.className = 'bay-tile p-2.5 rounded-lg border border-tertiary/70 bg-tertiary/10 text-tertiary hover:bg-tertiary/20 font-bold transition-all';
+      }
+    });
+    btn.className = 'bay-tile p-2.5 rounded-lg border-2 border-primary bg-primary text-on-primary font-bold shadow-[0_0_12px_#f6c162]';
+    document.getElementById('selected-bay-name').innerText = bayLabel;
+  };
+
+  window.confirmBayAllocation = function() {
+    const bayName = document.getElementById('selected-bay-name').innerText;
+    closeBayModal();
+    showToast(`Confirmed! ${bayName} locked for 2 hours.`);
+  };
+
+  window.openPassDrawer = function(hubId) {
+    const drawer = document.getElementById('pass-drawer');
+    const hub = HUBS_DATA[hubId] || HUBS_DATA['citadel'];
+    document.getElementById('pass-modal-deck').innerText = hub.title;
+    const priceText = currentVehicleMode === 'car' ? hub.carPrice : hub.bikePrice;
+    document.getElementById('pass-rate-label').innerText = `${priceText}/hr`;
+    document.getElementById('pass-vehicle-label').innerText = currentVehicleMode === 'car' ? 'Car / SUV' : 'Bike / Moto';
+    drawer.classList.remove('hidden');
+    drawer.classList.add('flex');
+  };
+
+  window.closePassDrawer = function() {
+    const drawer = document.getElementById('pass-drawer');
+    drawer.classList.add('hidden');
+    drawer.classList.remove('flex');
+  };
+
+  window.downloadPass = function() {
+    closePassDrawer();
+    showToast('Express Pass added to your mobile wallet!');
+  };
+
+  // Toast System
+  window.showToast = function(msg) {
+    const toast = document.getElementById('toast');
+    const text = document.getElementById('toast-text');
+    text.innerText = msg;
+    toast.classList.remove('opacity-0');
+    toast.classList.add('opacity-100');
+    clearTimeout(window._toastTimeout);
+    window._toastTimeout = setTimeout(() => {
+      toast.classList.remove('opacity-100');
+      toast.classList.add('opacity-0');
+    }, 2800);
+  };
+
+  // Initial State Boot
+  selectHub('citadel');
+</script>
+
+
+</body></html>
